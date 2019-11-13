@@ -33,6 +33,9 @@ namespace kanban_bot
         public void HireWorker(WorkerTypes workerType)
         {
             var addWorkerButton = _driver.FindElementsByCssSelector($"div.getPerson.{workerType}:not(.hidden)");
+            if(addWorkerButton.Any()) {
+                addWorkerButton[0].Click();
+            }
         }
 
         public bool HireWorkerButtonAvailable(WorkerTypes workerType)
