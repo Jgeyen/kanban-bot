@@ -28,17 +28,16 @@ namespace kanban_bot
 
             return _driver.FindElementsByCssSelector($"span.story.{type}:not(.busy)");
         }
-        public ReadOnlyCollection<IWebElement> TotalStories(StoryTypes storyType)
-        {
-            var type = Enum.GetName(typeof(StoryTypes), storyType);
-
-            return _driver.FindElementsByCssSelector($"span.story.{type}");
-        }
 
         public Story FindWork(StoryTypes type)
         {
             var stories = AvailableStories(type);
             return stories.Any() ? new Story(stories[0], _driver): null;
+        }
+
+        public static void AddProject()
+        {
+            _driver.FindElementById("getLead").Click();
         }
     }
 

@@ -20,20 +20,24 @@ namespace kanban_bot
         public List<Worker> Workers = new List<Worker>();
         private ChromeDriver _driver = null;
 
-        public WorkerPool(ChromeDriver driver){
+        public WorkerPool(ChromeDriver driver)
+        {
             _driver = driver;
         }
 
         public void UpdateWorkers()
         {
-            try
+            for (int i = 0; i < 3; i++)
             {
-                Workers = GetWorkers();
-            }
-            catch (StaleElementReferenceException)
-            {
-                Thread.Sleep(10);
-                Workers = GetWorkers();
+                try
+                {
+                    Workers = GetWorkers();
+                    break;
+                }
+                catch (StaleElementReferenceException)
+                {
+                    Thread.Sleep(10);
+                }
             }
         }
         private List<Worker> GetWorkers()
@@ -61,9 +65,9 @@ namespace kanban_bot
             UpdateWorkers();
         }
 
-        
+
     }
-    
+
     public class Worker
     {
         private ChromeDriver _driver = null;
@@ -73,7 +77,7 @@ namespace kanban_bot
         private string _id;
         public string Name { get; private set; }
         public int SkillLevel => _skillz.FirstOrDefault(s => s.Type == (Skill.SkillType)Type)?.Level ?? 0;
-        public WorkerTypes Type => _skillz.Count > 1? WorkerTypes.founder: (WorkerTypes)_skillz.First().Type;
+        public WorkerTypes Type => _skillz.Count > 1 ? WorkerTypes.founder : (WorkerTypes)_skillz.First().Type;
 
         public bool isBusy()
         {

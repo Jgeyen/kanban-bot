@@ -1,92 +1,56 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.Linq;
-using System.Text.RegularExpressions;
 using System.Threading;
-using OpenQA.Selenium;
 using OpenQA.Selenium.Chrome;
 
 namespace kanban_bot
 {
     class Program
     {
-        
-
-        private const string _Url = "https://test-uiautomation.verifybrand.com/";
-
+        private const string _url = "https://secretgeek.github.io/devShop/";
         private static ChromeDriver _driver = null;
         static void Main(string[] args)
         {
             try
             {
+                GetStarted();
 
-                var rootDir = System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().CodeBase).Substring(6);
-                var options = new ChromeOptions();
-                options.AddArgument("start-maximized");
-                options.AddArgument("no-sandbox");
-
-                _driver = new ChromeDriver(rootDir, options, TimeSpan.FromMinutes(3));
-
-                _driver.Navigate().GoToUrl("https://secretgeek.github.io/devShop/");
-                _driver.FindElementById("start").Click();
                 var workerPool = new WorkerPool(_driver);
                 var kanbanBoard = new KanbanBoard(_driver);
+                var store = new Store(_driver);
+
                 workerPool.UpdateWorkers();
 
                 var workers = workerPool.Workers;
 
                 while (true)
                 {
-                    if (ShouldAddProject(kanbanBoard))
+                    if (ShouldAddProject(workerPool, kanbanBoard, store))
                     {
-                        AddProject();
-                        AddProject();
+                        KanbanBoard.AddProject();
                     }
 
-                    foreach (var type in Enum.GetValues(typeof(WorkerTypes)).Cast<WorkerTypes>())
+                    var workerBeeTypes = (Enum.GetValues(typeof(WorkerTypes)).Cast<WorkerTypes>()).Where(e => e != WorkerTypes.founder).ToList();
+
+                    foreach (var type in workerBeeTypes)
                     {
-                        if (ShouldAddWorker(type, workerPool))
+                        if (ShouldAddWorker(type, workerPool, store))
                         {
                             workerPool.AddWorker(type);
                             workers = workerPool.Workers;
                         }
-                    }
-
-                    foreach (var worker in workers.Where(w => w.Type == WorkerTypes.ba && !w.isBusy()).OrderByDescending(w => w.SkillLevel))
-                    {
-                        var work = kanbanBoard.FindWork(StoryTypes.ba);
-                        if (work != null)
-                        {
-                            work.Select();
-                            worker.Select();
-                            break;
-                        }
-                    }
-
-                    foreach (var worker in workers.Where(w => w.Type == WorkerTypes.test && !w.isBusy()).OrderByDescending(w => w.SkillLevel))
-                    {
                         Thread.Sleep(10);
 
-                        var work = kanbanBoard.FindWork(StoryTypes.test);
-                        if (work != null)
+                        foreach (var worker in workers.Where(w => w.Type == type && !w.isBusy()).OrderByDescending(w => w.SkillLevel))
                         {
-                            work.Select();
-                            worker.Select();
-                            break;
-                        }
-                    }
 
-                    foreach (var worker in workers.Where(w => w.Type == WorkerTypes.dev && !w.isBusy()).OrderByDescending(w => w.SkillLevel))
-                    {
-                        Thread.Sleep(10);
-
-                        var work = kanbanBoard.FindWork(StoryTypes.dev);
-                        if (work != null)
-                        {
-                            work.Select();
-                            worker.Select();
-                            break;
+                            var work = kanbanBoard.FindWork((StoryTypes)type);
+                            if (work != null)
+                            {
+                                work.Select();
+                                worker.Select();
+                                break;
+                            }
                         }
                     }
 
@@ -133,28 +97,39 @@ namespace kanban_bot
             }
         }
 
-        
-
-        private static bool ShouldAddProject(KanbanBoard board)
+        private static void GetStarted()
         {
-            var baStories = board.TotalStories(StoryTypes.ba);
-            var devStories = board.TotalStories(StoryTypes.dev);
+            var rootDir = System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().CodeBase).Substring(6);
+            var options = new ChromeOptions();
+            options.AddArgument("start-maximized");
+            options.AddArgument("no-sandbox");
 
-            return !baStories.Any() && !devStories.Any() && TotalMoneyAvailable() > -200;
+            _driver = new ChromeDriver(rootDir, options, TimeSpan.FromMinutes(3));
+
+            _driver.Navigate().GoToUrl(_url);
+            _driver.FindElementById("start").Click();
         }
 
-        private static bool ShouldAddWorker(WorkerTypes workerType, WorkerPool workerPool)
+        private static bool ShouldAddProject(WorkerPool workerPool, KanbanBoard board, Store store)
         {
-            var workerCount = workerPool.Workers.Count(w => w.Type== workerType);
+            return 
+                !board.AvailableStories(StoryTypes.ba).Any() && 
+                board.AvailableStories(StoryTypes.dev).Count() < (workerPool.Workers.Where(w => w.Type == WorkerTypes.dev).Count() +1)*2 && 
+                store.TotalMoneyAvailable() > -200;
+        }
+
+        private static bool ShouldAddWorker(WorkerTypes workerType, WorkerPool workerPool, Store store)
+        {
+            var workerCount = workerPool.Workers.Count(w => w.Type == workerType);
             var addWorkerButton = _driver.FindElementsByCssSelector($"div.getPerson.{workerType}:not(.hidden)");
 
             return
                     workerCount < 4 &&
-                    (workerCount <= workerPool.Workers.Count(w => w.Type== WorkerTypes.ba) ||
-                    workerCount <= workerPool.Workers.Count(w => w.Type== WorkerTypes.dev) ||
-                    workerCount <= workerPool.Workers.Count(w => w.Type== WorkerTypes.test)) &&
+                    (workerCount <= workerPool.Workers.Count(w => w.Type == WorkerTypes.ba) ||
+                    workerCount <= workerPool.Workers.Count(w => w.Type == WorkerTypes.dev) ||
+                    workerCount <= workerPool.Workers.Count(w => w.Type == WorkerTypes.test)) &&
                     addWorkerButton.Any() &&
-                    TotalMoneyAvailable() > WorkerPurchaseCost(workerType);
+                    store.TotalMoneyAvailable() > store.WorkerPurchaseCost(workerType);
         }
         // private static bool ShouldUpgradeWorker(WorkerTypes workerType)
         // {
@@ -171,44 +146,5 @@ namespace kanban_bot
         //             addWorkerButton.Any() &&
         //             TotalMoneyAvailable() > WorkerPurchaseCost(workerType);
         // }
-
-        private static void AddProject()
-        {
-            _driver.FindElementById("getLead").Click();
-        }
-        
-
-        private static int TotalMoneyAvailable()
-        {
-            return ExtractMoney(_driver.FindElementById("money").Text);
-        }
-
-        private static int WorkerPurchaseCost(WorkerTypes workerType)
-        {
-            var type = Enum.GetName(typeof(WorkerTypes), workerType);
-
-            var workerButton = _driver.FindElementsByCssSelector($"div.getPerson.{type}:not(.hidden)");
-            if (workerButton.Any())
-            {
-                return ExtractMoney(workerButton[0].Text);
-            }
-            return int.MaxValue;
-        }
-
-        private static int ExtractMoney(string text)
-        {
-            var moneyText = Regex.Match(text, @"\d+").Value;
-            return int.Parse(moneyText);
-        }
- 
-        
-        
-
-        
-
-        public class Store
-        {
-
-        }
     }
 }
