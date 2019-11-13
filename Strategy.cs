@@ -5,7 +5,7 @@ namespace kanban_bot
 {
     public interface ISimpleStrategy
     {
-        void ExecuteStrategy(WorkerPool workerPool, KanbanBoard board, Store store);
+        void ExecuteStrategy(WorkerPool pool, KanbanBoard board, Store store);
     }
 
     public interface IEmployeeStrategy
@@ -35,19 +35,20 @@ namespace kanban_bot
         {
             _workerType = workerType;
         }
-        public void Hire(WorkerPool workerPool, KanbanBoard board, Store store)
+        public void Hire(WorkerPool pool, KanbanBoard board, Store store)
         {
-            var workerCount = workerPool.Workers.Count(w => w.Type == _workerType);
+            var workerCount = pool.Workers.Count(w => w.Type == _workerType);
 
             if (
                     workerCount < 4 &&
-                    (workerCount <= workerPool.Workers.Count(w => w.Type == WorkerTypes.ba) ||
-                    workerCount <= workerPool.Workers.Count(w => w.Type == WorkerTypes.dev) ||
-                    workerCount <= workerPool.Workers.Count(w => w.Type == WorkerTypes.test)) &&
+                    (workerCount <= pool.Workers.Count(w => w.Type == WorkerTypes.ba) ||
+                    workerCount <= pool.Workers.Count(w => w.Type == WorkerTypes.dev) ||
+                    workerCount <= pool.Workers.Count(w => w.Type == WorkerTypes.test)) &&
                     store.HireWorkerButtonAvailable(_workerType) &&
                     store.TotalMoneyAvailable() > store.WorkerPurchaseCost(_workerType))
             {
                 store.HireWorker(_workerType);
+                pool.UpdateWorkers();
             }
         }
 
@@ -65,7 +66,7 @@ namespace kanban_bot
             }
         }
 
-        public void Upgrade(WorkerPool workerPool, KanbanBoard board, Store store)
+        public void Upgrade(WorkerPool pool, KanbanBoard board, Store store)
         {
             throw new System.NotImplementedException();
         }
@@ -78,7 +79,7 @@ namespace kanban_bot
         {
             _workerType = workerType;
         }
-        public void Hire(WorkerPool workerPool, KanbanBoard board, Store store)
+        public void Hire(WorkerPool pool, KanbanBoard board, Store store)
         {
             return;
         }
@@ -120,7 +121,7 @@ namespace kanban_bot
                     }
         }
 
-        public void Upgrade(WorkerPool workerPool, KanbanBoard board, Store store)
+        public void Upgrade(WorkerPool pool, KanbanBoard board, Store store)
         {
             throw new System.NotImplementedException();
         }
