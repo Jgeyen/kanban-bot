@@ -55,7 +55,6 @@ namespace kanban_bot
     public class Worker
     {
         private Driver _driver = null;
-        private const string skillsSelector = "div.skills>span.skill";
         private const string nameSelector = "div.name";
         private List<Skill> _skillz;
         private string _id;
@@ -70,6 +69,9 @@ namespace kanban_bot
 
         public Worker(string id, Driver driver)
         {
+            _driver = driver;
+            _id = id;
+
             _skillz = new List<Skill>();
             var skillIds = _driver.GetSkillIdsForWorker(id);
 
@@ -81,12 +83,9 @@ namespace kanban_bot
                 if (skillClass.Contains("dev")) _skillz.Add(new Skill(Skill.SkillType.dev, int.Parse(level)));
                 if (skillClass.Contains("test")) _skillz.Add(new Skill(Skill.SkillType.test, int.Parse(level)));
                 if (skillClass.Contains("ba")) _skillz.Add(new Skill(Skill.SkillType.ba, int.Parse(level)));
-
             }
 
             Name = _driver.GetElementTextByCss(nameSelector);
-            _id = id;
-            _driver = driver;
         }
 
         public void Select()

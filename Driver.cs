@@ -10,6 +10,8 @@ namespace kanban_bot
 {
     public class Driver : IDisposable
     {
+        private const string skillsSelector = "div.skills>span.skill";
+
         private const int retries = 3;
         private ChromeDriver _driver;
 
@@ -25,9 +27,17 @@ namespace kanban_bot
         {
             return _driver.FindElementsByCssSelector($".person.doer").Select(s => s.GetAttribute("id")).ToList();
         }
-        public List<string> GetSkillIdsForWorker(string workerId)
+        public List<(int level, string skillClass)> GetSkillsForWorker(string workerId)
         {
-            return _driver.FindElementsByCssSelector($".person.doer").Select(s => s.GetAttribute("id")).ToList();
+            var worker = _driver.FindElementsById(workerId)[0];
+            var skills = worker?.FindElements(By.CssSelector(skillsSelector)).Select(s => (s.GetAttribute("data-level"),s.GetAttribute("class")));
+
+            foreach(var skill in skills)(
+                var level = skill.GetElementAttributeTextById(skillId, "data-level");
+                var skillClass = skill.GetElementAttributeTextById(skillId, "class");
+            )
+            var skillid = skills[0].GetAttribute("data-");
+            return _driver.FindElementsById(workerId)[0]?.FindElements(By.CssSelector(skillsSelector)).Select(s => s.GetAttribute("id")).ToList();
         }
         public IWebElement GetElementById(string id)
         {
