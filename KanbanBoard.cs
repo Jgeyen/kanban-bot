@@ -32,7 +32,7 @@ namespace kanban_bot
         public Story FindWork(StoryTypes type)
         {
             var stories = AvailableStories(type);
-            return stories.Any() ? new Story(stories[0], _driver): null;
+            return stories.Any() ? new Story(stories[0], _driver) : null;
         }
 
         public static void AddProject()

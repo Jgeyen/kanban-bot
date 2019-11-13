@@ -15,79 +15,39 @@ namespace kanban_bot
             {
                 GetStarted();
 
-                var workerPool = new WorkerPool(_driver);
-                var kanbanBoard = new KanbanBoard(_driver);
-                var store = new Store(_driver);
+                var game = new Game(_driver,
+                                    new AddingWorkStrategy(),
+                                    new FounderStrategy(WorkerTypes.founder),
+                                    new SimpleEmployeeStrategy(WorkerTypes.dev),
+                                    new SimpleEmployeeStrategy(WorkerTypes.test),
+                                    new SimpleEmployeeStrategy(WorkerTypes.ba));
 
-                workerPool.UpdateWorkers();
-
-                var workers = workerPool.Workers;
+                game.Pool.UpdateWorkers();
 
                 while (true)
                 {
-                    if (ShouldAddProject(workerPool, kanbanBoard, store))
-                    {
-                        KanbanBoard.AddProject();
-                    }
+                    game.AddProject();
+                    Thread.Sleep(10);
 
-                    var workerBeeTypes = (Enum.GetValues(typeof(WorkerTypes)).Cast<WorkerTypes>()).Where(e => e != WorkerTypes.founder).ToList();
+                    game.HireDeveloper();
+                    Thread.Sleep(10);
 
-                    foreach (var type in workerBeeTypes)
-                    {
-                        if (ShouldAddWorker(type, workerPool, store))
-                        {
-                            workerPool.AddWorker(type);
-                            workers = workerPool.Workers;
-                        }
-                        Thread.Sleep(10);
+                    game.HireTester();
+                    Thread.Sleep(10);
 
-                        foreach (var worker in workers.Where(w => w.Type == type && !w.isBusy()).OrderByDescending(w => w.SkillLevel))
-                        {
+                    game.HireBa();
+                    Thread.Sleep(10);
 
-                            var work = kanbanBoard.FindWork((StoryTypes)type);
-                            if (work != null)
-                            {
-                                work.Select();
-                                worker.Select();
-                                break;
-                            }
-                        }
-                    }
+                    game.DeveloperWork();
+                    Thread.Sleep(10);
 
-                    var founder = workers.First(w => w.Type == WorkerTypes.founder);
-                    var workFound = false;
-                    if (!founder.isBusy())
-                    {
-                        if (workerPool.AnyIdleWorkers(WorkerTypes.dev))
-                        {
-                            var work = kanbanBoard.FindWork(StoryTypes.ba);
-                            if (work != null)
-                            {
-                                work.Select();
-                                founder.Select();
-                                workFound = true;
-                            }
-                        }
-                        if (!workFound && workerPool.AnyIdleWorkers(WorkerTypes.test))
-                        {
-                            var work = kanbanBoard.FindWork(StoryTypes.dev);
-                            if (work != null)
-                            {
-                                work.Select();
-                                founder.Select();
-                            }
-                        }
-                        if (!workFound)
-                        {
-                            var work = kanbanBoard.FindWork(StoryTypes.test) ?? kanbanBoard.FindWork(StoryTypes.dev) ?? kanbanBoard.FindWork(StoryTypes.ba);
-                            if (work != null)
-                            {
-                                work.Select();
-                                founder.Select();
-                            }
-                        }
-                    }
+                    game.TesterWork();
+                    Thread.Sleep(10);
 
+                    game.BaWork();
+                    Thread.Sleep(10);
+
+                    game.FounderWork();
                     Thread.Sleep(10);
                 }
             }
@@ -110,27 +70,9 @@ namespace kanban_bot
             _driver.FindElementById("start").Click();
         }
 
-        private static bool ShouldAddProject(WorkerPool workerPool, KanbanBoard board, Store store)
-        {
-            return 
-                !board.AvailableStories(StoryTypes.ba).Any() && 
-                board.AvailableStories(StoryTypes.dev).Count() < (workerPool.Workers.Where(w => w.Type == WorkerTypes.dev).Count() +1)*2 && 
-                store.TotalMoneyAvailable() > -200;
-        }
 
-        private static bool ShouldAddWorker(WorkerTypes workerType, WorkerPool workerPool, Store store)
-        {
-            var workerCount = workerPool.Workers.Count(w => w.Type == workerType);
-            var addWorkerButton = _driver.FindElementsByCssSelector($"div.getPerson.{workerType}:not(.hidden)");
 
-            return
-                    workerCount < 4 &&
-                    (workerCount <= workerPool.Workers.Count(w => w.Type == WorkerTypes.ba) ||
-                    workerCount <= workerPool.Workers.Count(w => w.Type == WorkerTypes.dev) ||
-                    workerCount <= workerPool.Workers.Count(w => w.Type == WorkerTypes.test)) &&
-                    addWorkerButton.Any() &&
-                    store.TotalMoneyAvailable() > store.WorkerPurchaseCost(workerType);
-        }
+
         // private static bool ShouldUpgradeWorker(WorkerTypes workerType)
         // {
 

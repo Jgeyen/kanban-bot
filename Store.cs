@@ -30,6 +30,15 @@ namespace kanban_bot
             return int.MaxValue;
         }
 
+        public void HireWorker(WorkerTypes workerType)
+        {
+            var addWorkerButton = _driver.FindElementsByCssSelector($"div.getPerson.{workerType}:not(.hidden)");
+        }
+
+        public bool HireWorkerButtonAvailable(WorkerTypes workerType)
+        {
+            return _driver.FindElementsByCssSelector($"div.getPerson.{workerType}:not(.hidden)").Any();
+        }
         private int ExtractMoney(string text)
         {
             var moneyText = Regex.Match(text, @"-?\d+").Value;
