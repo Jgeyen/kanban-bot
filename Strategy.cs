@@ -1,4 +1,3 @@
-
 using System.Linq;
 
 namespace kanban_bot
@@ -87,38 +86,38 @@ namespace kanban_bot
         public void DoWork(WorkerPool pool, KanbanBoard board, Store store)
         {
             var founder = pool.Workers.First(w => w.Type == WorkerTypes.founder);
-                    var workFound = false;
-                    if (!founder.isBusy())
+            var workFound = false;
+            if (!founder.isBusy())
+            {
+                if (pool.AnyIdleWorkers(WorkerTypes.dev))
+                {
+                    var work = board.FindWork(StoryTypes.ba);
+                    if (work != null)
                     {
-                        if (pool.AnyIdleWorkers(WorkerTypes.dev))
-                        {
-                            var work = board.FindWork(StoryTypes.ba);
-                            if (work != null)
-                            {
-                                work.Select();
-                                founder.Select();
-                                workFound = true;
-                            }
-                        }
-                        if (!workFound && pool.AnyIdleWorkers(WorkerTypes.test))
-                        {
-                            var work = board.FindWork(StoryTypes.dev);
-                            if (work != null)
-                            {
-                                work.Select();
-                                founder.Select();
-                            }
-                        }
-                        if (!workFound)
-                        {
-                            var work = board.FindWork(StoryTypes.test) ?? board.FindWork(StoryTypes.dev) ?? board.FindWork(StoryTypes.ba);
-                            if (work != null)
-                            {
-                                work.Select();
-                                founder.Select();
-                            }
-                        }
+                        work.Select();
+                        founder.Select();
+                        workFound = true;
                     }
+                }
+                if (!workFound && pool.AnyIdleWorkers(WorkerTypes.test))
+                {
+                    var work = board.FindWork(StoryTypes.dev);
+                    if (work != null)
+                    {
+                        work.Select();
+                        founder.Select();
+                    }
+                }
+                if (!workFound)
+                {
+                    var work = board.FindWork(StoryTypes.test) ?? board.FindWork(StoryTypes.dev) ?? board.FindWork(StoryTypes.ba);
+                    if (work != null)
+                    {
+                        work.Select();
+                        founder.Select();
+                    }
+                }
+            }
         }
 
         public void Upgrade(WorkerPool pool, KanbanBoard board, Store store)

@@ -34,7 +34,7 @@ namespace kanban_bot
 
         public void AddProject()
         {
-            _driver.ClickItem("getLead");
+            _driver.ClickItemById("getLead");
         }
     }
 
@@ -50,7 +50,7 @@ namespace kanban_bot
 
         public void Select()
         {
-            _driver.ClickItem(_id);
+            _driver.ClickItemById(_id);
         }
     }
 }

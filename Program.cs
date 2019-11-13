@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Linq;
 using System.Threading;
 using OpenQA.Selenium.Chrome;
 
@@ -15,7 +14,6 @@ namespace kanban_bot
                 driver = GetStarted();
 
                 var game = new Game(driver,
-                                    new ChromeDriver(),
                                     new AddingWorkStrategy(),
                                     new FounderStrategy(WorkerTypes.founder),
                                     new SimpleEmployeeStrategy(WorkerTypes.dev),

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading;
 using OpenQA.Selenium;
@@ -7,9 +8,11 @@ using OpenQA.Selenium.Chrome;
 
 namespace kanban_bot
 {
-    public class Driver :IDisposable
+    public class Driver : IDisposable
     {
+        private const int retries = 3;
         private ChromeDriver _driver;
+
         public Driver(ChromeDriver driver)
         {
             _driver = driver;
@@ -18,32 +21,105 @@ namespace kanban_bot
         {
             return _driver.FindElementsByCssSelector($"span.story.{type}:not(.busy)").Select(s => s.GetAttribute("id")).ToList();
         }
-        public IWebElement GetStory(string id)
+        public List<string> GetWorkerIds()
         {
-            var story = _driver.FindElementsById(id);
-            return story.Any() ? story[0] : null;
+            return _driver.FindElementsByCssSelector($".person.doer").Select(s => s.GetAttribute("id")).ToList();
+        }
+        public List<string> GetSkillIdsForWorker(string workerId)
+        {
+            return _driver.FindElementsByCssSelector($".person.doer").Select(s => s.GetAttribute("id")).ToList();
+        }
+        public IWebElement GetElementById(string id)
+        {
+            return _driver.FindElementsById(id)[0];
+        }
+        public IWebElement GetElementByCss(string css)
+        {
+            return _driver.FindElementsByCssSelector(css)[0];
+        }
+        public bool IsElementPresentByCss(string css)
+        {
+            return _driver.FindElementsByCssSelector(css).Any();
+        }
+        public bool IsElementPresentById(string id)
+        {
+            return _driver.FindElementsById(id).Any();
+        }
+        public string GetElementAttributeTextById(string id, string attribute)
+        {
+            return GetElementAttributeText(By.Id(id), attribute);
         }
 
-        public void ClickItem(string id)
+        public string GetElementAttributeTextByCss(string css, string attribute)
         {
-            var el = _driver.FindElementsById(id);
-            if (el.Any())
+            return GetElementAttributeText(By.CssSelector(css), attribute);
+        }
+
+        private string GetElementAttributeText(By by, string attribute)
+        {
+            var text = "";
+            for (var i = 0; i < retries; i++)
             {
-                for (var i = 0; i < 4; i++)
+                try
                 {
-                    try
-                    {
-                        el[0].Click();
-                        break;
-                    }
-                    catch
-                    {
-                        Thread.Sleep(10);
-                    }
+                    text = _driver.FindElements(by)[0]?.GetAttribute(attribute) ?? "";
+                }
+                catch (StaleElementReferenceException) //This happens randomly and without warning. Best solution is to try again. Odds decrease each attempt.
+                {
+                    Thread.Sleep(10);
+                }
+            }
+            return text;
+        }
+        public string GetElementTextById(string id)
+        {
+            return GetElementText(By.Id(id));
+        }
+
+        public string GetElementTextByCss(string css)
+        {
+            return GetElementText(By.CssSelector(css));
+        }
+
+        private string GetElementText(By by)
+        {
+            var text = "";
+            for (var i = 0; i < retries; i++)
+            {
+                try
+                {
+                    text = _driver.FindElements(by)[0]?.Text ?? "";
+                }
+                catch (StaleElementReferenceException) //This happens randomly and without warning. Best solution is to try again. Odds decrease each attempt.
+                {
+                    Thread.Sleep(10);
+                }
+            }
+            return text;
+        }
+        public void ClickItemById(string id)
+        {
+            ClickItem(By.Id(id));
+        }
+        public void ClickItemByCss(string css)
+        {
+            ClickItem(By.CssSelector(css));
+        }
+        private void ClickItem(By by)
+        {
+            for (var i = 0; i < retries; i++)
+            {
+                try
+                {
+                    _driver.FindElements(by)[0]?.Click();
+                    break;
+                }
+                catch
+                {
+                    Thread.Sleep(10);
                 }
             }
         }
-
         public void Dispose()
         {
             _driver.Dispose();

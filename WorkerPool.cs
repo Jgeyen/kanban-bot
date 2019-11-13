@@ -1,9 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading;
-using OpenQA.Selenium;
-using OpenQA.Selenium.Chrome;
 
 namespace kanban_bot
 {
@@ -18,35 +15,24 @@ namespace kanban_bot
     public class WorkerPool
     {
         public List<Worker> Workers = new List<Worker>();
-        private ChromeDriver _driver = null;
+        private Driver _driver;
 
-        public WorkerPool(ChromeDriver driver)
+        public WorkerPool(Driver driver)
         {
             _driver = driver;
         }
 
         public void UpdateWorkers()
         {
-            for (int i = 0; i < 3; i++)
-            {
-                try
-                {
-                    Workers = GetWorkers();
-                    break;
-                }
-                catch (StaleElementReferenceException)
-                {
-                    Thread.Sleep(10);
-                }
-            }
+            Workers = GetWorkers();
         }
         private List<Worker> GetWorkers()
         {
             var workers = new List<Worker>();
-            var workerElements = _driver.FindElementsByCssSelector(".person.doer");
-            foreach (var worker in workerElements)
+            var workerIds = _driver.GetWorkerIds();
+            foreach (var workerId in workerIds)
             {
-                workers.Add(new Worker(worker, _driver));
+                workers.Add(new Worker(workerId, _driver));
             }
             return workers;
         }
@@ -55,22 +41,20 @@ namespace kanban_bot
         {
             var type = Enum.GetName(typeof(WorkerTypes), workerType);
 
-            return _driver.FindElementsByCssSelector($"span.person.{type}:not(.busy):not(#p1)").Any();
+            return _driver.IsElementPresentByCss($"span.person.{type}:not(.busy):not(#p1)");
         }
 
         public void AddWorker(WorkerTypes workerType)
         {
             var type = Enum.GetName(typeof(WorkerTypes), workerType);
-            _driver.FindElementByCssSelector($"div.getPerson.{type}:not(.hidden)").Click();
+            _driver.ClickItemByCss($"div.getPerson.{type}:not(.hidden)");
             UpdateWorkers();
         }
-
-
     }
 
     public class Worker
     {
-        private ChromeDriver _driver = null;
+        private Driver _driver = null;
         private const string skillsSelector = "div.skills>span.skill";
         private const string nameSelector = "div.name";
         private List<Skill> _skillz;
@@ -81,52 +65,33 @@ namespace kanban_bot
 
         public bool isBusy()
         {
-            var el = _driver.FindElementsById(_id);
-            var busy = false;
-
-            if (el.Any())
-            {
-                try
-                {
-                    busy = el[0].GetAttribute("class").Contains("busy");
-                }
-                catch (StaleElementReferenceException)
-                {
-                    Thread.Sleep(10);
-                    el = _driver.FindElementsById(_id);
-                    busy = el[0].GetAttribute("class").Contains("busy");
-                }
-            }
-            return busy;
+            return _driver.GetElementAttributeTextById(_id, "class").Contains("busy");
         }
 
-        public Worker(IWebElement element, ChromeDriver driver)
+        public Worker(string id, Driver driver)
         {
             _skillz = new List<Skill>();
-            var skills = element.FindElements(By.CssSelector(skillsSelector));
-            foreach (var skillEl in skills)
-            {
-                var levelEl = skillEl.GetAttribute("data-level");
+            var skillIds = _driver.GetSkillIdsForWorker(id);
 
-                var skillCss = skillEl.GetAttribute("class");
-                if (skillCss.Contains("dev")) _skillz.Add(new Skill(Skill.SkillType.dev, int.Parse(levelEl)));
-                if (skillCss.Contains("test")) _skillz.Add(new Skill(Skill.SkillType.test, int.Parse(levelEl)));
-                if (skillCss.Contains("ba")) _skillz.Add(new Skill(Skill.SkillType.ba, int.Parse(levelEl)));
+            foreach (var skillId in skillIds)
+            {
+                var level = _driver.GetElementAttributeTextById(skillId, "data-level");
+                var skillClass = _driver.GetElementAttributeTextById(skillId, "class");
+
+                if (skillClass.Contains("dev")) _skillz.Add(new Skill(Skill.SkillType.dev, int.Parse(level)));
+                if (skillClass.Contains("test")) _skillz.Add(new Skill(Skill.SkillType.test, int.Parse(level)));
+                if (skillClass.Contains("ba")) _skillz.Add(new Skill(Skill.SkillType.ba, int.Parse(level)));
 
             }
 
-            Name = element.FindElements(By.CssSelector(nameSelector))[0].Text;
-            _id = element.GetAttribute("id");
+            Name = _driver.GetElementTextByCss(nameSelector);
+            _id = id;
             _driver = driver;
         }
 
         public void Select()
         {
-            var el = _driver.FindElementsById(_id);
-            if (el.Any())
-            {
-                el[0].Click();
-            }
+            _driver.ClickItemById(_id);
         }
     }
     public class Skill

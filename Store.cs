@@ -1,46 +1,37 @@
 using System;
-using System.Linq;
 using System.Text.RegularExpressions;
-using OpenQA.Selenium.Chrome;
 
 namespace kanban_bot
 {
     public class Store
     {
-        private static ChromeDriver _driver;
+        private static Driver _driver;
 
-        public Store(ChromeDriver driver)
+        public Store(Driver driver)
         {
             _driver = driver;
         }
         public int TotalMoneyAvailable()
         {
-            return ExtractMoney(_driver.FindElementById("money").Text);
+            return ExtractMoney(_driver.GetElementTextById("money"));
         }
 
         public int WorkerPurchaseCost(WorkerTypes workerType)
         {
             var type = Enum.GetName(typeof(WorkerTypes), workerType);
 
-            var workerButton = _driver.FindElementsByCssSelector($"div.getPerson.{type}:not(.hidden)");
-            if (workerButton.Any())
-            {
-                return ExtractMoney(workerButton[0].Text);
-            }
-            return int.MaxValue;
+            var costText = _driver.GetElementTextByCss($"div.getPerson.{type}:not(.hidden)");
+            return costText == "" ? ExtractMoney(costText) : int.MaxValue;
         }
 
         public void HireWorker(WorkerTypes workerType)
         {
-            var addWorkerButton = _driver.FindElementsByCssSelector($"div.getPerson.{workerType}:not(.hidden)");
-            if(addWorkerButton.Any()) {
-                addWorkerButton[0].Click();
-            }
+            _driver.ClickItemByCss($"div.getPerson.{workerType}:not(.hidden)");
         }
 
         public bool HireWorkerButtonAvailable(WorkerTypes workerType)
         {
-            return _driver.FindElementsByCssSelector($"div.getPerson.{workerType}:not(.hidden)").Any();
+            return _driver.IsElementPresentByCss($"div.getPerson.{workerType}:not(.hidden)");
         }
         private int ExtractMoney(string text)
         {

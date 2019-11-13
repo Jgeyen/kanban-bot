@@ -13,12 +13,12 @@ namespace kanban_bot
         public IEmployeeStrategy TesterStrategy;
         public IEmployeeStrategy BaStrategy;
 
-        public Game(Driver drivee, ChromeDriver driver, ISimpleStrategy projectStrategy, IEmployeeStrategy founderStrategy, IEmployeeStrategy developerStrategy, IEmployeeStrategy testerStrategy, IEmployeeStrategy baStrategy)
+        public Game(Driver drivee, ISimpleStrategy projectStrategy, IEmployeeStrategy founderStrategy, IEmployeeStrategy developerStrategy, IEmployeeStrategy testerStrategy, IEmployeeStrategy baStrategy)
         {
             
-            Pool = new WorkerPool(driver);
+            Pool = new WorkerPool(drivee);
             Board = new KanbanBoard(drivee);
-            Store = new Store(driver);
+            Store = new Store(drivee);
             ProjectStrategy = projectStrategy;
             FounderStrategy = founderStrategy;
             DeveloperStrategy = developerStrategy;
