@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -39,23 +38,13 @@ namespace kanban_bot
 
         public bool AnyIdleWorkers(WorkerTypes workerType)
         {
-            var type = Enum.GetName(typeof(WorkerTypes), workerType);
-
-            return _driver.IsElementPresentByCss($"span.person.{type}:not(.busy):not(#p1)");
-        }
-
-        public void AddWorker(WorkerTypes workerType)
-        {
-            var type = Enum.GetName(typeof(WorkerTypes), workerType);
-            _driver.ClickItemByCss($"div.getPerson.{type}:not(.hidden)");
-            UpdateWorkers();
+            return _driver.IsIdleWorkerAvailable(workerType);
         }
     }
 
     public class Worker
     {
         private Driver _driver = null;
-        private const string nameSelector = "div.name";
         private List<Skill> _skillz;
         private string _id;
         public string Name { get; private set; }
@@ -73,19 +62,16 @@ namespace kanban_bot
             _id = id;
 
             _skillz = new List<Skill>();
-            var skillIds = _driver.GetSkillIdsForWorker(id);
+            var skills = _driver.GetSkillsForWorker(id);
 
-            foreach (var skillId in skillIds)
+            foreach (var skill in skills)
             {
-                var level = _driver.GetElementAttributeTextById(skillId, "data-level");
-                var skillClass = _driver.GetElementAttributeTextById(skillId, "class");
-
-                if (skillClass.Contains("dev")) _skillz.Add(new Skill(Skill.SkillType.dev, int.Parse(level)));
-                if (skillClass.Contains("test")) _skillz.Add(new Skill(Skill.SkillType.test, int.Parse(level)));
-                if (skillClass.Contains("ba")) _skillz.Add(new Skill(Skill.SkillType.ba, int.Parse(level)));
+                if (skill.skillClass.Contains("dev")) _skillz.Add(new Skill(Skill.SkillType.dev, skill.level));
+                if (skill.skillClass.Contains("test")) _skillz.Add(new Skill(Skill.SkillType.test, skill.level));
+                if (skill.skillClass.Contains("ba")) _skillz.Add(new Skill(Skill.SkillType.ba, skill.level));
             }
 
-            Name = _driver.GetElementTextByCss(nameSelector);
+            Name = _driver.GetElementTextById(_id);
         }
 
         public void Select()

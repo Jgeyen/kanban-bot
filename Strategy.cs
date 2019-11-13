@@ -37,13 +37,12 @@ namespace kanban_bot
         public void Hire(WorkerPool pool, KanbanBoard board, Store store)
         {
             var workerCount = pool.Workers.Count(w => w.Type == _workerType);
-
             if (
                     workerCount < 4 &&
                     (workerCount <= pool.Workers.Count(w => w.Type == WorkerTypes.ba) ||
                     workerCount <= pool.Workers.Count(w => w.Type == WorkerTypes.dev) ||
                     workerCount <= pool.Workers.Count(w => w.Type == WorkerTypes.test)) &&
-                    store.HireWorkerButtonAvailable(_workerType) &&
+                    store.IsHireWorkerButtonAvailable(_workerType) &&
                     store.TotalMoneyAvailable() > store.WorkerPurchaseCost(_workerType))
             {
                 store.HireWorker(_workerType);

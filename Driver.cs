@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading;
 using OpenQA.Selenium;
@@ -30,39 +29,25 @@ namespace kanban_bot
         public List<(int level, string skillClass)> GetSkillsForWorker(string workerId)
         {
             var worker = _driver.FindElementsById(workerId)[0];
-            var skills = worker?.FindElements(By.CssSelector(skillsSelector)).Select(s => (s.GetAttribute("data-level"),s.GetAttribute("class")));
+            var skills = worker?.FindElements(By.CssSelector(skillsSelector)).Select(s => (level: int.Parse(s.GetAttribute("data-level")), skillClass: s.GetAttribute("class"))).ToList();
 
-            foreach(var skill in skills)(
-                var level = skill.GetElementAttributeTextById(skillId, "data-level");
-                var skillClass = skill.GetElementAttributeTextById(skillId, "class");
-            )
-            var skillid = skills[0].GetAttribute("data-");
-            return _driver.FindElementsById(workerId)[0]?.FindElements(By.CssSelector(skillsSelector)).Select(s => s.GetAttribute("id")).ToList();
+            return skills;
         }
-        public IWebElement GetElementById(string id)
+
+        public bool IsIdleWorkerAvailable(WorkerTypes workerType)
         {
-            return _driver.FindElementsById(id)[0];
+            var type = Enum.GetName(typeof(WorkerTypes), workerType);
+
+            return _driver.FindElementsByCssSelector($"span.person.{type}:not(.busy):not(#p1)").Any();
         }
-        public IWebElement GetElementByCss(string css)
+        public bool IsHireWorkerButtonAvailable(WorkerTypes workerType)
         {
-            return _driver.FindElementsByCssSelector(css)[0];
+            return _driver.FindElementsByCssSelector($"div.getPerson.{workerType}:not(.hidden)").Any();
         }
-        public bool IsElementPresentByCss(string css)
-        {
-            return _driver.FindElementsByCssSelector(css).Any();
-        }
-        public bool IsElementPresentById(string id)
-        {
-            return _driver.FindElementsById(id).Any();
-        }
+
         public string GetElementAttributeTextById(string id, string attribute)
         {
             return GetElementAttributeText(By.Id(id), attribute);
-        }
-
-        public string GetElementAttributeTextByCss(string css, string attribute)
-        {
-            return GetElementAttributeText(By.CssSelector(css), attribute);
         }
 
         private string GetElementAttributeText(By by, string attribute)
@@ -72,7 +57,7 @@ namespace kanban_bot
             {
                 try
                 {
-                    text = _driver.FindElements(by)[0]?.GetAttribute(attribute) ?? "";
+                    text = _driver.FindElements(by).FirstOrDefault()?.GetAttribute(attribute) ?? "";
                 }
                 catch (StaleElementReferenceException) //This happens randomly and without warning. Best solution is to try again. Odds decrease each attempt.
                 {
@@ -80,6 +65,11 @@ namespace kanban_bot
                 }
             }
             return text;
+        }
+
+        public string GetWorkerButtonCost(WorkerTypes workerType)
+        {
+            return GetElementText(By.CssSelector($"div.getPerson.{workerType}:not(.hidden)"));
         }
         public string GetElementTextById(string id)
         {
@@ -91,6 +81,7 @@ namespace kanban_bot
             return GetElementText(By.CssSelector(css));
         }
 
+
         private string GetElementText(By by)
         {
             var text = "";
@@ -98,7 +89,7 @@ namespace kanban_bot
             {
                 try
                 {
-                    text = _driver.FindElements(by)[0]?.Text ?? "";
+                    text = _driver.FindElements(by).FirstOrDefault()?.Text ?? "";
                 }
                 catch (StaleElementReferenceException) //This happens randomly and without warning. Best solution is to try again. Odds decrease each attempt.
                 {
@@ -107,13 +98,13 @@ namespace kanban_bot
             }
             return text;
         }
+        public void ClickHireWorker(WorkerTypes workerType)
+        {
+            ClickItem(By.CssSelector(($"div.getPerson.{workerType}:not(.hidden)")));
+        }
         public void ClickItemById(string id)
         {
             ClickItem(By.Id(id));
-        }
-        public void ClickItemByCss(string css)
-        {
-            ClickItem(By.CssSelector(css));
         }
         private void ClickItem(By by)
         {
@@ -121,7 +112,7 @@ namespace kanban_bot
             {
                 try
                 {
-                    _driver.FindElements(by)[0]?.Click();
+                    _driver.FindElements(by).FirstOrDefault()?.Click();
                     break;
                 }
                 catch

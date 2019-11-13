@@ -13,30 +13,30 @@ namespace kanban_bot
         }
         public int TotalMoneyAvailable()
         {
-            return ExtractMoney(_driver.GetElementTextById("money"));
+            return ExtractMoney(_driver.GetElementTextById("money")) ?? int.MinValue;
         }
 
         public int WorkerPurchaseCost(WorkerTypes workerType)
         {
             var type = Enum.GetName(typeof(WorkerTypes), workerType);
 
-            var costText = _driver.GetElementTextByCss($"div.getPerson.{type}:not(.hidden)");
-            return costText == "" ? ExtractMoney(costText) : int.MaxValue;
+            
+            return ExtractMoney(_driver.GetWorkerButtonCost(workerType)) ?? int.MaxValue;
         }
 
         public void HireWorker(WorkerTypes workerType)
         {
-            _driver.ClickItemByCss($"div.getPerson.{workerType}:not(.hidden)");
+            _driver.ClickHireWorker(workerType);
         }
 
-        public bool HireWorkerButtonAvailable(WorkerTypes workerType)
+        public bool IsHireWorkerButtonAvailable(WorkerTypes workerType)
         {
-            return _driver.IsElementPresentByCss($"div.getPerson.{workerType}:not(.hidden)");
+            return _driver.IsHireWorkerButtonAvailable(workerType);
         }
-        private int ExtractMoney(string text)
+        private int? ExtractMoney(string text)
         {
             var moneyText = Regex.Match(text, @"-?\d+").Value;
-            return int.Parse(moneyText);
+            return int.TryParse(moneyText, out int result) ? (int?)result : null;
         }
     }
 }

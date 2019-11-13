@@ -15,7 +15,7 @@ namespace kanban_bot
 
         public Game(Driver drivee, ISimpleStrategy projectStrategy, IEmployeeStrategy founderStrategy, IEmployeeStrategy developerStrategy, IEmployeeStrategy testerStrategy, IEmployeeStrategy baStrategy)
         {
-            
+
             Pool = new WorkerPool(drivee);
             Board = new KanbanBoard(drivee);
             Store = new Store(drivee);
@@ -43,6 +43,20 @@ namespace kanban_bot
         public void HireBa()
         {
             BaStrategy.Hire(Pool, Board, Store);
+        }
+
+        public void UpgradeDeveloper()
+        {
+            DeveloperStrategy.Upgrade(Pool, Board, Store);
+        }
+
+        public void UpgradeTester()
+        {
+            TesterStrategy.Upgrade(Pool, Board, Store);
+        }
+        public void UpgradeBa()
+        {
+            BaStrategy.Upgrade(Pool, Board, Store);
         }
 
         public void DeveloperWork()
