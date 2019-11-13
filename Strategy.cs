@@ -24,7 +24,7 @@ namespace kanban_bot
                 board.AvailableStories(StoryTypes.dev).Count() < (workerPool.Workers.Where(w => w.Type == WorkerTypes.dev).Count() + 1) * 2 &&
                 store.TotalMoneyAvailable() > -200)
             {
-                KanbanBoard.AddProject();
+                board.AddProject();
             }
         }
     }

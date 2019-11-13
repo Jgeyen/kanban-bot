@@ -1,9 +1,6 @@
 using System;
-using System.Collections.ObjectModel;
+using System.Collections.Generic;
 using System.Linq;
-using System.Threading;
-using OpenQA.Selenium;
-using OpenQA.Selenium.Chrome;
 
 namespace kanban_bot
 {
@@ -16,17 +13,17 @@ namespace kanban_bot
 
     public class KanbanBoard
     {
-        private static ChromeDriver _driver;
-        public KanbanBoard(ChromeDriver driver)
+        private Driver _driver;
+        public KanbanBoard(Driver driver)
         {
             _driver = driver;
         }
 
-        public ReadOnlyCollection<IWebElement> AvailableStories(StoryTypes storyType)
+        public List<string> AvailableStories(StoryTypes storyType)
         {
             var type = Enum.GetName(typeof(StoryTypes), storyType);
 
-            return _driver.FindElementsByCssSelector($"span.story.{type}:not(.busy)");
+            return _driver.GetStoryIds(storyType);
         }
 
         public Story FindWork(StoryTypes type)
@@ -35,45 +32,25 @@ namespace kanban_bot
             return stories.Any() ? new Story(stories[0], _driver) : null;
         }
 
-        public static void AddProject()
+        public void AddProject()
         {
-            _driver.FindElementById("getLead").Click();
+            _driver.ClickItem("getLead");
         }
     }
 
     public class Story
     {
-
         private string _id;
-        private ChromeDriver _driver;
-        public Story(IWebElement element, ChromeDriver driver)
+        private Driver _driver;
+        public Story(string id, Driver driver)
         {
-            _id = element.GetAttribute("id");
+            _id = id;
             _driver = driver;
         }
 
         public void Select()
         {
-            var el = _driver.FindElementsById(_id);
-            if (el.Any())
-            {
-                var failCount = 0;
-                var success = false;
-                while (!success && failCount < 3)
-                {
-                    try
-                    {
-                        el[0].Click();
-                        success = true;
-                    }
-                    catch
-                    {
-                        failCount++;
-                        success = false;
-                        Thread.Sleep(10);
-                    }
-                }
-            }
+            _driver.ClickItem(_id);
         }
     }
 }

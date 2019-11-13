@@ -7,19 +7,18 @@ namespace kanban_bot
         public WorkerPool Pool;
         public KanbanBoard Board;
         public Store Store;
-        private ChromeDriver _driver;
         public ISimpleStrategy ProjectStrategy;
         public IEmployeeStrategy FounderStrategy;
         public IEmployeeStrategy DeveloperStrategy;
         public IEmployeeStrategy TesterStrategy;
         public IEmployeeStrategy BaStrategy;
 
-        public Game(ChromeDriver driver, ISimpleStrategy projectStrategy, IEmployeeStrategy founderStrategy, IEmployeeStrategy developerStrategy, IEmployeeStrategy testerStrategy, IEmployeeStrategy baStrategy)
+        public Game(Driver drivee, ChromeDriver driver, ISimpleStrategy projectStrategy, IEmployeeStrategy founderStrategy, IEmployeeStrategy developerStrategy, IEmployeeStrategy testerStrategy, IEmployeeStrategy baStrategy)
         {
-            _driver = driver;
-            Pool = new WorkerPool(_driver);
-            Board = new KanbanBoard(_driver);
-            Store = new Store(_driver);
+            
+            Pool = new WorkerPool(driver);
+            Board = new KanbanBoard(drivee);
+            Store = new Store(driver);
             ProjectStrategy = projectStrategy;
             FounderStrategy = founderStrategy;
             DeveloperStrategy = developerStrategy;
