@@ -103,7 +103,7 @@ namespace kanban_bot
 
             var item = store.RetrieveStoreItem(storeItemType);
             if (workers.Count() >= 1 &&
-                workers.Where(w => w.SkillLevel < workers.Count() * 3).Any() &&
+                workers.Where(w => w.SkillLevel < workers.Count() * 5).Any() &&
                 item.Cost() < store.TotalMoneyAvailable())
             {
                 store.PurchaseStoreItem(item);
