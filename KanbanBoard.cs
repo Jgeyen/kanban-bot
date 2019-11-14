@@ -36,6 +36,11 @@ namespace kanban_bot
         {
             _driver.ClickItemById("getLead");
         }
+
+        public void SelectPurchasedStoreItem(WorkerTypes type)
+        {
+            _driver.ClickPurchasedItem(type);
+        }
     }
 
     public class Story

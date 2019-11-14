@@ -22,8 +22,10 @@ namespace kanban_bot
 
                 game.Pool.UpdateWorkers();
 
+                var loopCount = 0;
                 while (true)
                 {
+                    loopCount++;
                     game.AddProject();
                     Thread.Sleep(10);
 
@@ -35,7 +37,7 @@ namespace kanban_bot
 
                     game.HireBa();
                     Thread.Sleep(10);
-
+                    
                     game.DeveloperWork();
                     Thread.Sleep(10);
 
@@ -47,6 +49,20 @@ namespace kanban_bot
 
                     game.FounderWork();
                     Thread.Sleep(10);
+
+                    if (loopCount > 100)
+                    {
+                        loopCount = 0;
+                        game.UpgradeDeveloper();
+                        Thread.Sleep(10);
+
+                        game.UpgradeTester();
+                        Thread.Sleep(10);
+
+                        game.UpgradeBa();
+                        Thread.Sleep(10);
+
+                    }
                 }
             }
             finally

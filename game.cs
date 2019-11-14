@@ -44,7 +44,7 @@ namespace kanban_bot
         {
             BaStrategy.Hire(Pool, Board, Store);
         }
-
+        
         public void UpgradeDeveloper()
         {
             DeveloperStrategy.Upgrade(Pool, Board, Store);

@@ -20,17 +20,57 @@ namespace kanban_bot
         }
         public List<string> GetStoryIds(StoryTypes type)
         {
-            return _driver.FindElementsByCssSelector($"span.story.{type}:not(.busy)").Select(s => s.GetAttribute("id")).ToList();
+            List<string> ids = null;
+            for (var i = 0; i < retries; i++)
+            {
+                try
+                {
+                    ids = _driver.FindElementsByCssSelector($"span.story.{type}:not(.busy)").Select(s => s.GetAttribute("id")).ToList();
+                    break;
+                }
+                catch (StaleElementReferenceException) //This happens randomly and without warning. Best solution is to try again. Odds decrease each attempt.
+                {
+                    Thread.Sleep(10);
+                }
+            }
+
+            return ids;
         }
         public List<string> GetWorkerIds()
         {
-            return _driver.FindElementsByCssSelector($".person.doer").Select(s => s.GetAttribute("id")).ToList();
+            List<string> ids = null;
+            for (var i = 0; i < retries; i++)
+            {
+                try
+                {
+                    ids = _driver.FindElementsByCssSelector($".person.doer").Select(s => s.GetAttribute("id")).ToList();
+                    break;
+                }
+                catch (StaleElementReferenceException) //This happens randomly and without warning. Best solution is to try again. Odds decrease each attempt.
+                {
+                    Thread.Sleep(10);
+                }
+            }
+
+            return ids;
         }
+
         public List<(int level, string skillClass)> GetSkillsForWorker(string workerId)
         {
-            var worker = _driver.FindElementsById(workerId)[0];
-            var skills = worker?.FindElements(By.CssSelector(skillsSelector)).Select(s => (level: int.Parse(s.GetAttribute("data-level")), skillClass: s.GetAttribute("class"))).ToList();
-
+            List<(int level, string skillClass)> skills = null;
+            for (var i = 0; i < retries; i++)
+            {
+                try
+                {
+                    var worker = _driver.FindElementsById(workerId)[0];
+                    skills = worker?.FindElements(By.CssSelector(skillsSelector)).Select(s => (level: int.Parse(s.GetAttribute("data-level")), skillClass: s.GetAttribute("class"))).ToList();
+                    break;
+                }
+                catch (StaleElementReferenceException) //This happens randomly and without warning. Best solution is to try again. Odds decrease each attempt.
+                {
+                    Thread.Sleep(10);
+                }
+            }
             return skills;
         }
 
@@ -44,7 +84,31 @@ namespace kanban_bot
         {
             return _driver.FindElementsByCssSelector($"div.getPerson.{workerType}:not(.hidden)").Any();
         }
+        public bool IsStoreItemAvailable(string id)
+        {
+            return _driver.FindElementsByCssSelector($"#items>.storeItem-catalog.item-enabled>#{id}").Any();
+        }
+        public string StoreItemCost(string id)
+        {
+            return GetElementText(By.CssSelector($"#items>.storeItem-catalog.item-enabled>#{id}"));
+        }
+        public void PurchaseStoreItem(string id)
+        {
+            ClickItemById(id);
+        }
 
+        public void ClickPurchasedItem(WorkerTypes type)
+        {
+            ClickItem(By.CssSelector($".storeItem.receiver.{type}"));
+        }
+        public void GoToStore()
+        {
+            ClickItem(By.CssSelector(".button.visitStore"));
+        }
+        public void GoToKanban()
+        {
+            ClickItemById("closeStore");
+        }
         public string GetElementAttributeTextById(string id, string attribute)
         {
             return GetElementAttributeText(By.Id(id), attribute);
@@ -58,6 +122,7 @@ namespace kanban_bot
                 try
                 {
                     text = _driver.FindElements(by).FirstOrDefault()?.GetAttribute(attribute) ?? "";
+                    break;
                 }
                 catch (StaleElementReferenceException) //This happens randomly and without warning. Best solution is to try again. Odds decrease each attempt.
                 {
@@ -80,8 +145,6 @@ namespace kanban_bot
         {
             return GetElementText(By.CssSelector(css));
         }
-
-
         private string GetElementText(By by)
         {
             var text = "";
@@ -89,7 +152,12 @@ namespace kanban_bot
             {
                 try
                 {
+                    var bobg = _driver.FindElements(by);
+
+                    var bob = _driver.FindElements(by).FirstOrDefault();
+                    var tedxt = _driver.FindElements(by).FirstOrDefault()?.Text;
                     text = _driver.FindElements(by).FirstOrDefault()?.Text ?? "";
+                    break;
                 }
                 catch (StaleElementReferenceException) //This happens randomly and without warning. Best solution is to try again. Odds decrease each attempt.
                 {

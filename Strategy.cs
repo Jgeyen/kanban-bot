@@ -66,7 +66,20 @@ namespace kanban_bot
 
         public void Upgrade(WorkerPool pool, KanbanBoard board, Store store)
         {
-            throw new System.NotImplementedException();
+            store.GoToStore();
+            var workers = pool.Workers.Where(w => w.Type == _workerType);
+            var item = store.RetrieveStoreItem(StoreItems.UpskillDeveloper);
+            if (workers.Count() >= 1 &&
+                workers.Where(w => w.SkillLevel < workers.Count() * 3).Any() &&
+                item.Cost() < store.TotalMoneyAvailable())
+            {
+                store.PurchaseStoreItem(item);
+                store.GoToKanban();
+                board.SelectPurchasedStoreItem(_workerType);
+                workers.OrderByDescending(w => w.SkillLevel).FirstOrDefault()?.Select();
+            }
+            //Return from store page
+            store.GoToKanban();
         }
     }
 
