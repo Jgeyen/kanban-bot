@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 
@@ -38,20 +39,42 @@ namespace kanban_bot
         }
         public void Hire(WorkerPool pool, KanbanBoard board, Store store)
         {
-            var workerCount = pool.Workers.Count(w => w.Type == _workerType);
-            if (
-                    workerCount < 4 &&
-                    (workerCount <= pool.Workers.Count(w => w.Type == WorkerTypes.ba) ||
-                    workerCount <= pool.Workers.Count(w => w.Type == WorkerTypes.dev) ||
-                    workerCount <= pool.Workers.Count(w => w.Type == WorkerTypes.test)) &&
-                    store.IsHireWorkerButtonAvailable(_workerType) &&
-                    store.TotalMoneyAvailable() > store.WorkerPurchaseCost(_workerType))
+            if (ShouldHire(pool, board, store))
             {
                 store.HireWorker(_workerType);
                 pool.UpdateWorkers();
             }
         }
 
+        private bool ShouldHire(WorkerPool pool, KanbanBoard board, Store store)
+        {
+            var workerCount = pool.Workers.Count(w => w.Type == _workerType);
+            var baCount = pool.Workers.Count(w => w.Type == WorkerTypes.ba);
+            var devCount = pool.Workers.Count(w => w.Type == WorkerTypes.dev);
+            var testCount = pool.Workers.Count(w => w.Type == WorkerTypes.test);
+            var anyLowSkillWorkers = pool.Workers.Any(w => w.Type == _workerType && w.SkillLevel < workerCount * 5);
+            var who = pool.Workers.Where(w => w.Type == _workerType && w.SkillLevel < workerCount * 5).ToList();
+            var result = workerCount < 4 &&
+            (workerCount <= baCount ||
+            workerCount <= devCount ||
+            workerCount <= testCount) &&
+            !anyLowSkillWorkers &&
+            store.IsHireWorkerButtonAvailable(_workerType) &&
+            store.TotalMoneyAvailable() > store.WorkerPurchaseCost(_workerType);
+
+            Debug.WriteLine($"Hire Decision was: {result} with the following information:");
+            Debug.WriteLine($"WorkerCount:{workerCount}");
+            Debug.WriteLine($"baCount:{baCount}");
+            Debug.WriteLine($"devCount:{devCount}");
+            Debug.WriteLine($"testCount:{testCount}");
+            Debug.WriteLine($"anyLowSkillWorkers:{anyLowSkillWorkers}");
+            Debug.WriteLine($"IsHireWorkerButtonAvailable:{store.IsHireWorkerButtonAvailable(_workerType)}");
+            Debug.WriteLine($"TotalMoneyAvailable:{store.TotalMoneyAvailable()}");
+            Debug.WriteLine($"WorkerPurchaseCost:{store.WorkerPurchaseCost(_workerType)}");
+
+            return result;
+
+        }
         public void DoWork(WorkerPool pool, KanbanBoard board, Store store)
         {
             foreach (var worker in pool.Workers.Where(w => w.Type == _workerType && !w.isBusy()).OrderByDescending(w => w.SkillLevel))
@@ -70,7 +93,8 @@ namespace kanban_bot
         {
             store.GoToStore();
             var workers = pool.Workers.Where(w => w.Type == _workerType);
-            var storeItemType = _workerType switch{
+            var storeItemType = _workerType switch
+            {
                 WorkerTypes.dev => StoreItems.UpskillDeveloper,
                 WorkerTypes.test => StoreItems.UpskillTester,
                 WorkerTypes.ba => StoreItems.UpskillBA,
@@ -83,14 +107,10 @@ namespace kanban_bot
                 item.Cost() < store.TotalMoneyAvailable())
             {
                 store.PurchaseStoreItem(item);
-                Thread.Sleep(10);
                 store.GoToKanban();
-                Thread.Sleep(10);
                 board.SelectPurchasedStoreItem(_workerType);
-                Thread.Sleep(10);
-
                 workers.OrderBy(w => w.SkillLevel).FirstOrDefault()?.SelectWithWait(TimeSpan.FromSeconds(10));
-                
+                pool.UpdateWorkers();
             }
             //Return from store page
             store.GoToKanban();

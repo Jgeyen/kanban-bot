@@ -50,7 +50,7 @@ namespace kanban_bot
                     game.FounderWork();
                     Thread.Sleep(10);
 
-                    if (loopCount > 100)
+                    if (loopCount > 50)
                     {
                         loopCount = 0;
                         game.UpgradeDeveloper();
