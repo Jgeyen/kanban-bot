@@ -21,11 +21,12 @@ namespace kanban_bot
 
         public List<string> AvailableStories(StoryTypes storyType)
         {
-            var type = Enum.GetName(typeof(StoryTypes), storyType);
-
-            return _driver.GetStoryIds(storyType);
+            return _driver.GetAvailableStoryIds(storyType);
         }
-
+        public List<string> TotalStories(StoryTypes storyType)
+        {
+            return _driver.GetTotalStoryIds(storyType);
+        }
         public Story FindWork(StoryTypes type)
         {
             var stories = AvailableStories(type);

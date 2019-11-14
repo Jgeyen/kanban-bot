@@ -18,32 +18,26 @@ namespace kanban_bot
         {
             _driver = driver;
         }
-        public List<string> GetStoryIds(StoryTypes type)
+        public List<string> GetAvailableStoryIds(StoryTypes type)
         {
-            List<string> ids = null;
-            for (var i = 0; i < retries; i++)
-            {
-                try
-                {
-                    ids = _driver.FindElementsByCssSelector($"span.story.{type}:not(.busy)").Select(s => s.GetAttribute("id")).ToList();
-                    break;
-                }
-                catch (StaleElementReferenceException) //This happens randomly and without warning. Best solution is to try again. Odds decrease each attempt.
-                {
-                    Thread.Sleep(10);
-                }
-            }
-
-            return ids;
+            return GetIds(By.CssSelector($"span.story.{type}:not(.busy)"));
+        }
+        public List<string> GetTotalStoryIds(StoryTypes type)
+        {
+            return GetIds(By.CssSelector($"span.story.{type}"));
         }
         public List<string> GetWorkerIds()
         {
+            return GetIds(By.CssSelector($".person.doer"));
+        }
+
+        private List<string> GetIds(By by){
             List<string> ids = null;
             for (var i = 0; i < retries; i++)
             {
                 try
                 {
-                    ids = _driver.FindElementsByCssSelector($".person.doer").Select(s => s.GetAttribute("id")).ToList();
+                    ids = _driver.FindElements(by).Select(s => s.GetAttribute("id")).ToList();
                     break;
                 }
                 catch (StaleElementReferenceException) //This happens randomly and without warning. Best solution is to try again. Odds decrease each attempt.
@@ -54,7 +48,6 @@ namespace kanban_bot
 
             return ids;
         }
-
         public List<(int level, string skillClass)> GetSkillsForWorker(string workerId)
         {
             List<(int level, string skillClass)> skills = null;

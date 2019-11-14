@@ -1,5 +1,7 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 
 namespace kanban_bot
 {
@@ -77,6 +79,13 @@ namespace kanban_bot
         public void Select()
         {
             _driver.ClickItemById(_id);
+        }
+        public void SelectWithWait(TimeSpan timeout){
+            var endTime = DateTime.Now + timeout;
+            while(isBusy() && endTime > DateTime.Now){
+                Thread.Sleep(10);
+            }
+            Select();
         }
     }
     public class Skill

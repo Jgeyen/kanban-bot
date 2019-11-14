@@ -1,4 +1,6 @@
+using System;
 using System.Linq;
+using System.Threading;
 
 namespace kanban_bot
 {
@@ -19,7 +21,7 @@ namespace kanban_bot
         public void ExecuteStrategy(WorkerPool workerPool, KanbanBoard board, Store store)
         {
             if (
-                !board.AvailableStories(StoryTypes.ba).Any() &&
+                !board.TotalStories(StoryTypes.ba).Any() &&
                 board.AvailableStories(StoryTypes.dev).Count() < (workerPool.Workers.Where(w => w.Type == WorkerTypes.dev).Count() + 1) * 2 &&
                 store.TotalMoneyAvailable() > -200)
             {
@@ -68,15 +70,27 @@ namespace kanban_bot
         {
             store.GoToStore();
             var workers = pool.Workers.Where(w => w.Type == _workerType);
-            var item = store.RetrieveStoreItem(StoreItems.UpskillDeveloper);
+            var storeItemType = _workerType switch{
+                WorkerTypes.dev => StoreItems.UpskillDeveloper,
+                WorkerTypes.test => StoreItems.UpskillTester,
+                WorkerTypes.ba => StoreItems.UpskillBA,
+                WorkerTypes.founder => StoreItems.UpskillDeveloper
+            };
+
+            var item = store.RetrieveStoreItem(storeItemType);
             if (workers.Count() >= 1 &&
                 workers.Where(w => w.SkillLevel < workers.Count() * 3).Any() &&
                 item.Cost() < store.TotalMoneyAvailable())
             {
                 store.PurchaseStoreItem(item);
+                Thread.Sleep(10);
                 store.GoToKanban();
+                Thread.Sleep(10);
                 board.SelectPurchasedStoreItem(_workerType);
-                workers.OrderByDescending(w => w.SkillLevel).FirstOrDefault()?.Select();
+                Thread.Sleep(10);
+
+                workers.OrderBy(w => w.SkillLevel).FirstOrDefault()?.SelectWithWait(TimeSpan.FromSeconds(10));
+                
             }
             //Return from store page
             store.GoToKanban();
