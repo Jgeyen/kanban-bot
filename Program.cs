@@ -27,16 +27,12 @@ namespace kanban_bot
                 {
                     loopCount++;
                     game.AddProject();
-                    Thread.Sleep(10);
 
                     game.HireDeveloper();
-                    Thread.Sleep(10);
 
                     game.HireTester();
-                    Thread.Sleep(10);
 
                     game.HireBa();
-                    Thread.Sleep(10);
                     
                     game.DeveloperWork();
                     Thread.Sleep(10);

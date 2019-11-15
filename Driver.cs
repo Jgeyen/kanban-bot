@@ -22,6 +22,10 @@ namespace kanban_bot
         {
             return GetIds(By.CssSelector($"span.story.{type}:not(.busy)"));
         }
+        public string GetNextStoryId(StoryTypes type)
+        {
+            return _driver.FindElementsByCssSelector($"span.story.{type}:not(.busy)").FirstOrDefault()?.GetAttribute("id") ?? "";
+        }
         public List<string> GetTotalStoryIds(StoryTypes type)
         {
             return GetIds(By.CssSelector($"span.story.{type}"));

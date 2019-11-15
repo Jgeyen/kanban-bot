@@ -52,7 +52,7 @@ namespace kanban_bot
             var baCount = pool.Workers.Count(w => w.Type == WorkerTypes.ba);
             var devCount = pool.Workers.Count(w => w.Type == WorkerTypes.dev);
             var testCount = pool.Workers.Count(w => w.Type == WorkerTypes.test);
-            var anyLowSkillWorkers = pool.Workers.Any(w => w.Type == _workerType && w.SkillLevel < workerCount * 5);
+            var anyLowSkillWorkers = pool.Workers.Any(w => w.Type == _workerType && w.SkillLevel < workerCount * 2);
             var who = pool.Workers.Where(w => w.Type == _workerType && w.SkillLevel < workerCount * 5).ToList();
             var result = workerCount < 4 &&
             (workerCount <= baCount ||
@@ -79,7 +79,7 @@ namespace kanban_bot
         {
             foreach (var worker in pool.Workers.Where(w => w.Type == _workerType && !w.isBusy()).OrderByDescending(w => w.SkillLevel))
             {
-                var work = board.FindWork((StoryTypes)_workerType);
+                var work = board.FindNextWork((StoryTypes)_workerType);
                 if (work != null)
                 {
                     work.Select();
@@ -103,7 +103,7 @@ namespace kanban_bot
 
             var item = store.RetrieveStoreItem(storeItemType);
             if (workers.Count() >= 1 &&
-                workers.Where(w => w.SkillLevel < workers.Count() * 5).Any() &&
+                workers.Where(w => w.SkillLevel < workers.Count() * 2).Any() &&
                 item.Cost() < store.TotalMoneyAvailable())
             {
                 store.PurchaseStoreItem(item);
@@ -137,7 +137,7 @@ namespace kanban_bot
             {
                 if (pool.AnyIdleWorkers(WorkerTypes.dev))
                 {
-                    var work = board.FindWork(StoryTypes.ba);
+                    var work = board.FindNextWork(StoryTypes.ba);
                     if (work != null)
                     {
                         work.Select();
@@ -147,7 +147,7 @@ namespace kanban_bot
                 }
                 if (!workFound && pool.AnyIdleWorkers(WorkerTypes.test))
                 {
-                    var work = board.FindWork(StoryTypes.dev);
+                    var work = board.FindNextWork(StoryTypes.dev);
                     if (work != null)
                     {
                         work.Select();
@@ -156,7 +156,7 @@ namespace kanban_bot
                 }
                 if (!workFound)
                 {
-                    var work = board.FindWork(StoryTypes.test) ?? board.FindWork(StoryTypes.dev) ?? board.FindWork(StoryTypes.ba);
+                    var work = board.FindNextWork(StoryTypes.test) ?? board.FindNextWork(StoryTypes.dev) ?? board.FindNextWork(StoryTypes.ba);
                     if (work != null)
                     {
                         work.Select();

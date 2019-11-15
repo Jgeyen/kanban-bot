@@ -23,14 +23,15 @@ namespace kanban_bot
         {
             return _driver.GetAvailableStoryIds(storyType);
         }
+        
         public List<string> TotalStories(StoryTypes storyType)
         {
             return _driver.GetTotalStoryIds(storyType);
         }
-        public Story FindWork(StoryTypes type)
+        public Story FindNextWork(StoryTypes type)
         {
-            var stories = AvailableStories(type);
-            return stories.Any() ? new Story(stories[0], _driver) : null;
+            var story = _driver.GetNextStoryId(type);
+            return story != "" ? new Story(story, _driver) : null;
         }
 
         public void AddProject()
