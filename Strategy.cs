@@ -84,7 +84,6 @@ namespace kanban_bot
                 {
                     work.Select();
                     worker.Select();
-                    break;
                 }
             }
         }
@@ -133,9 +132,18 @@ namespace kanban_bot
         {
             var founder = pool.Workers.First(w => w.Type == WorkerTypes.founder);
             var workFound = false;
+            var devs = pool.Workers.Count(w => w.Type == WorkerTypes.dev);
+            var testers = pool.Workers.Count(w => w.Type == WorkerTypes.test);
+            var bas = pool.Workers.Count(w => w.Type == WorkerTypes.ba);
+            var avg = (devs + testers + bas) /3;
+
+            var doDevWork = devs <= avg;
+            var doTestWork =  testers <= avg;
+            var doBaWork =  bas <= avg;
+
             if (!founder.isBusy())
             {
-                if (pool.AnyIdleWorkers(WorkerTypes.dev))
+                if (doBaWork && pool.AnyIdleWorkers(WorkerTypes.dev))
                 {
                     var work = board.FindNextWork(StoryTypes.ba);
                     if (work != null)
@@ -145,18 +153,22 @@ namespace kanban_bot
                         workFound = true;
                     }
                 }
-                if (!workFound && pool.AnyIdleWorkers(WorkerTypes.test))
+                if (doDevWork && !workFound && pool.AnyIdleWorkers(WorkerTypes.test))
                 {
                     var work = board.FindNextWork(StoryTypes.dev);
                     if (work != null)
                     {
                         work.Select();
                         founder.Select();
+                        workFound = true;
                     }
                 }
                 if (!workFound)
                 {
-                    var work = board.FindNextWork(StoryTypes.test) ?? board.FindNextWork(StoryTypes.dev) ?? board.FindNextWork(StoryTypes.ba);
+                    var work = (doTestWork ? board.FindNextWork(StoryTypes.test): null) ??
+                                (doDevWork ? board.FindNextWork(StoryTypes.dev) : null) ??
+                                (doTestWork ? board.FindNextWork(StoryTypes.ba): null);
+
                     if (work != null)
                     {
                         work.Select();

@@ -49,7 +49,7 @@ namespace kanban_bot
             var type = Enum.GetName(typeof(WorkerTypes), workerType);
 
 
-            return ExtractMoney(_driver.GetWorkerButtonCost(workerType)) ?? int.MaxValue;
+            return ExtractMoney(_driver.GetHireWorkerCost(workerType)) ?? int.MaxValue;
         }
 
         public void HireWorker(WorkerTypes workerType)

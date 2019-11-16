@@ -59,5 +59,10 @@ namespace kanban_bot
         {
             _driver.ClickItemById(_id);
         }
+
+        public StoryTypes StoryType()
+        {
+            return _driver.GetStoryType(_id);
+        }
     }
 }

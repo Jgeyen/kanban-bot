@@ -2,16 +2,13 @@
 using System.Threading;
 using OpenQA.Selenium.Chrome;
 
-namespace kanban_bot
-{
-    class Program
-    {
-        static void Main(string[] args)
-        {
+namespace kanban_bot {
+    class Program {
+        static void Main(string[] args) {
             Driver driver = null;
-            try
-            {
+            try {
                 driver = GetStarted();
+                State state = new State(driver);
 
                 var game = new Game(driver,
                                     new AddingWorkStrategy(),
@@ -23,8 +20,8 @@ namespace kanban_bot
                 game.Pool.UpdateWorkers();
 
                 var loopCount = 0;
-                while (true)
-                {
+                while (true) {
+                    state.UpdateState();
                     loopCount++;
                     game.AddProject();
 
@@ -33,7 +30,7 @@ namespace kanban_bot
                     game.HireTester();
 
                     game.HireBa();
-                    
+
                     game.DeveloperWork();
                     Thread.Sleep(10);
 
@@ -46,8 +43,7 @@ namespace kanban_bot
                     game.FounderWork();
                     Thread.Sleep(10);
 
-                    if (loopCount > 50)
-                    {
+                    if (loopCount > 50) {
                         loopCount = 0;
                         game.UpgradeDeveloper();
                         Thread.Sleep(10);
@@ -60,15 +56,12 @@ namespace kanban_bot
 
                     }
                 }
-            }
-            finally
-            {
+            } finally {
                 driver?.Dispose();
             }
         }
 
-        private static Driver GetStarted()
-        {
+        private static Driver GetStarted() {
             var rootDir = System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().CodeBase).Substring(6);
             var options = new ChromeOptions();
             options.AddArgument("start-maximized");
