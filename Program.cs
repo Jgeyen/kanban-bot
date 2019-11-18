@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Threading;
 using OpenQA.Selenium.Chrome;
 
@@ -8,7 +9,6 @@ namespace kanban_bot {
             Driver driver = null;
             try {
                 driver = GetStarted();
-                State state = new State(driver);
 
                 var game = new Game(driver,
                                     new AddingWorkStrategy(),
@@ -21,39 +21,27 @@ namespace kanban_bot {
 
                 var loopCount = 0;
                 while (true) {
-                    state.UpdateState();
                     loopCount++;
+
+                    game.UpdateState();
                     game.AddProject();
-
-                    game.HireDeveloper();
-
-                    game.HireTester();
-
-                    game.HireBa();
-
-                    game.DeveloperWork();
-                    Thread.Sleep(10);
-
-                    game.TesterWork();
-                    Thread.Sleep(10);
-
-                    game.BaWork();
-                    Thread.Sleep(10);
-
+                    Debug.WriteLine($"About to Founder: {DateTime.Now}");
                     game.FounderWork();
-                    Thread.Sleep(10);
-
-                    if (loopCount > 50) {
-                        loopCount = 0;
+                    Debug.WriteLine($"About to Dev: {DateTime.Now}");
+                    game.DeveloperWork();
+                    Debug.WriteLine($"About to Test: {DateTime.Now}");
+                    game.TesterWork();
+                    Debug.WriteLine($"About to BA: {DateTime.Now}");
+                    game.BaWork();
+                    if (loopCount % 25 == 0) {
+                        game.HireDeveloper();
+                        game.HireTester();
+                        game.HireBa();
+                    }
+                    if (loopCount % 50 == 0) {
                         game.UpgradeDeveloper();
-                        Thread.Sleep(10);
-
                         game.UpgradeTester();
-                        Thread.Sleep(10);
-
                         game.UpgradeBa();
-                        Thread.Sleep(10);
-
                     }
                 }
             } finally {

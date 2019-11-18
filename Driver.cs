@@ -10,48 +10,41 @@ namespace kanban_bot {
         private const string skillsSelector = "div.skills>span.skill";
 
         private const int retries = 3;
-        private ChromeDriver _driver;
+        public ChromeDriver CDriver;
 
         public Driver(ChromeDriver driver) {
-            _driver = driver;
+            CDriver = driver;
         }
         public List<string> GetAvailableStoryIds(StoryTypes type) {
             return GetIds(By.CssSelector($"span.story.{type}:not(.busy)"));
         }
         public string GetNextStoryId(StoryTypes type) {
-            return _driver.FindElementsByCssSelector($"span.story.{type}:not(.busy)").FirstOrDefault()?.GetAttribute("id") ?? "";
+            return CDriver.FindElementsByCssSelector($"span.story.{type}:not(.busy)").FirstOrDefault()?.GetAttribute("id") ?? "";
         }
         public List<string> GetTotalStoryIds(StoryTypes type) {
             return GetIds(By.CssSelector($"span.story.{type}"));
-        }
-        public StoryTypes GetStoryType(string id) {
-            var storyClass = _driver.FindElementById(id).GetAttribute("class").Split(' ').Where(c => c == "dev" || c == "test" || c == "ba").FirstOrDefault();
-            return storyClass switch
-            {
-                "ba" => StoryTypes.ba,
-                "dev" => StoryTypes.dev,
-                "test" => StoryTypes.test
-            };
         }
 
         public List<string> GetWorkerIds() {
             return GetIds(By.CssSelector($".person.doer"));
         }
         public string GetIdleWorkerId(WorkerTypes type) {
-            if(type == WorkerTypes.founder){
+            if (type == WorkerTypes.founder) {
                 return GetId(By.CssSelector($"#p1:not(.busy)"));
             }
             return GetId(By.CssSelector($"#people .person.doer.{type}:not(.busy)"));
         }
-        private string GetId(By by){
-            string id=null;
+        private string GetId(By by) {
+            string id = null;
             for (var i = 0; i < retries; i++) {
                 try {
-                    id = _driver.FindElement(by).GetAttribute("id");
+                    id = CDriver.FindElement(by)?.GetAttribute("id");
                     break;
                 } catch (StaleElementReferenceException) //This happens randomly and without warning. Best solution is to try again. Odds decrease each attempt.
                   {
                     Thread.Sleep(10);
+                } catch (NoSuchElementException) {
+                    break;
                 }
             }
             return id;
@@ -60,7 +53,7 @@ namespace kanban_bot {
             List<string> ids = null;
             for (var i = 0; i < retries; i++) {
                 try {
-                    ids = _driver.FindElements(by).Select(s => s.GetAttribute("id")).ToList();
+                    ids = CDriver.FindElements(by).Select(s => s.GetAttribute("id")).ToList();
                     break;
                 } catch (StaleElementReferenceException) //This happens randomly and without warning. Best solution is to try again. Odds decrease each attempt.
                   {
@@ -74,7 +67,7 @@ namespace kanban_bot {
             List<(int level, string skillClass)> skills = null;
             for (var i = 0; i < retries; i++) {
                 try {
-                    var worker = _driver.FindElementsById(workerId)[0];
+                    var worker = CDriver.FindElementsById(workerId)[0];
                     skills = worker?.FindElements(By.CssSelector(skillsSelector)).Select(s => (level: int.Parse(s.GetAttribute("data-level")), skillClass: s.GetAttribute("class"))).ToList();
                     break;
                 } catch (StaleElementReferenceException) //This happens randomly and without warning. Best solution is to try again. Odds decrease each attempt.
@@ -84,19 +77,29 @@ namespace kanban_bot {
             }
             return skills;
         }
+        public int? GetLowestSkillForWorkers(WorkerTypes type) {
+            int? skillLevel = 1;
+            for (var i = 0; i < retries; i++) {
+                try {
+                    var skillLevels = CDriver.FindElementsByCssSelector($".skill.{type}")?.Select(w => int.Parse(w.GetAttribute("data-level")));
+                    skillLevel = skillLevels?.OrderBy(s => s).FirstOrDefault();
+                    break;
+                } catch (StaleElementReferenceException) //This happens randomly and without warning. Best solution is to try again. Odds decrease each attempt.
+                  {
+                    Thread.Sleep(10);
+                }
+            }
+            return skillLevel;
+        }
 
         public bool IsIdleWorkerAvailable(WorkerTypes workerType) {
-            return _driver.FindElementsByCssSelector($"span.person.{workerType}:not(.busy):not(#p1)").Any();
+            return CDriver.FindElementsByCssSelector($"span.person.{workerType}:not(.busy):not(#p1)").Any();
         }
-
-        public int GetIdleWorkerCount(WorkerTypes workerType){
-            return _driver.FindElementsByCssSelector($"person.doer.{workerType}:not(.busy):not(#p1)").Count();
+        public int GetIdleWorkerCount(WorkerTypes workerType) {
+            return CDriver.FindElementsByCssSelector($".person.doer.{workerType}:not(.busy):not(#p1)").Count();
         }
         public bool IsHireWorkerButtonAvailable(WorkerTypes workerType) {
-            return _driver.FindElementsByCssSelector($"div.getPerson.{workerType}:not(.hidden)").Any();
-        }
-        public bool IsStoreItemAvailable(string id) {
-            return _driver.FindElementsByCssSelector($"#items>.storeItem-catalog.item-enabled>#{id}").Any();
+            return CDriver.FindElementsByCssSelector($"div.getPerson.{workerType}:not(.hidden)").Any();
         }
         public string StoreItemCost(string id) {
             return GetElementText(By.CssSelector($"#items>.storeItem-catalog.item-enabled>#{id}"));
@@ -120,12 +123,6 @@ namespace kanban_bot {
         public string GetNewProjectCost() {
             return GetElementText(By.Id("getLead"));
         }
-        public bool GetClassExistsInElementById(string id, string classToCheck){
-            return GetElementAttributeTextById(id, "class").Contains(classToCheck);
-        }
-         public bool GetClassExistsInElementByCss(string css, string classToCheck){
-            return GetElementAttributeTextByCss(css, "class").Contains(classToCheck);
-        }
         public string GetElementAttributeTextById(string id, string attribute) {
             return GetElementAttributeText(By.Id(id), attribute);
         }
@@ -140,10 +137,9 @@ namespace kanban_bot {
             var text = "";
             for (var i = 0; i < retries; i++) {
                 try {
-                    text = _driver.FindElements(by).FirstOrDefault()?.GetAttribute(attribute) ?? "";
+                    text = CDriver.FindElements(by).FirstOrDefault()?.GetAttribute(attribute) ?? "";
                     break;
-                } catch (StaleElementReferenceException) //This happens randomly and without warning. Best solution is to try again. Odds decrease each attempt.
-                  {
+                } catch (StaleElementReferenceException) {
                     Thread.Sleep(10);
                 }
             }
@@ -162,11 +158,7 @@ namespace kanban_bot {
             var text = "";
             for (var i = 0; i < retries; i++) {
                 try {
-                    var bobg = _driver.FindElements(by);
-
-                    var bob = _driver.FindElements(by).FirstOrDefault();
-                    var tedxt = _driver.FindElements(by).FirstOrDefault()?.Text;
-                    text = _driver.FindElements(by).FirstOrDefault()?.Text ?? "";
+                    text = CDriver.FindElements(by).FirstOrDefault()?.Text ?? "";
                     break;
                 } catch (StaleElementReferenceException) //This happens randomly and without warning. Best solution is to try again. Odds decrease each attempt.
                   {
@@ -184,7 +176,7 @@ namespace kanban_bot {
         private void ClickItem(By by) {
             for (var i = 0; i < retries; i++) {
                 try {
-                    _driver.FindElements(by).FirstOrDefault()?.Click();
+                    CDriver.FindElements(by).FirstOrDefault()?.Click();
                     break;
                 } catch {
                     Thread.Sleep(10);
@@ -192,7 +184,7 @@ namespace kanban_bot {
             }
         }
         public void Dispose() {
-            _driver.Dispose();
+            CDriver.Dispose();
         }
     }
 }

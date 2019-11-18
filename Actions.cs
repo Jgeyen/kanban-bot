@@ -1,3 +1,5 @@
+using System;
+
 namespace kanban_bot {
     public class Actions {
         private WorkerPool _workers;
@@ -9,49 +11,55 @@ namespace kanban_bot {
             _store = store;
         }
 
-        public void FounderDoDevWork() {
-            WorkerDoWork(WorkerTypes.founder, StoryTypes.dev);
+        public bool FounderDoDevWork() {
+            return WorkerDoWork(WorkerTypes.founder, StoryTypes.dev);
         }
-        public void FounderDoTestWork() {
-            WorkerDoWork(WorkerTypes.founder, StoryTypes.test);
+        public bool FounderDoTestWork() {
+            return WorkerDoWork(WorkerTypes.founder, StoryTypes.test);
         }
-        public void FounderDoBaWork() {
-            WorkerDoWork(WorkerTypes.founder, StoryTypes.ba);
+        public bool FounderDoBaWork() {
+            return WorkerDoWork(WorkerTypes.founder, StoryTypes.ba);
         }
-        public void DoDevWork() {
-            WorkerDoWork(WorkerTypes.dev, StoryTypes.dev);
+        public bool DoDevWork() {
+            return WorkerDoWork(WorkerTypes.dev, StoryTypes.dev);
         }
-        public void DoTestWork() {
-            WorkerDoWork(WorkerTypes.test, StoryTypes.test);
+        public bool DoTestWork() {
+            return WorkerDoWork(WorkerTypes.test, StoryTypes.test);
         }
-        public void DoBaWork() {
-            WorkerDoWork(WorkerTypes.ba, StoryTypes.ba);
+        public bool DoBaWork() {
+            return WorkerDoWork(WorkerTypes.ba, StoryTypes.ba);
         }
-        private void WorkerDoWork(WorkerTypes workerType, StoryTypes storyType) {
+        private bool WorkerDoWork(WorkerTypes workerType, StoryTypes storyType) {
+            var foundWork = false;
             var worker = _workers.GetIdleWorker(workerType);
-            var work = _board.FindNextWork(StoryTypes.dev);
+            var work = _board.FindNextWork(storyType);
             if (worker != null && work != null) {
                 worker.Select();
                 work.Select();
+                foundWork = true;
             }
+            return foundWork;
         }
         public void HireDev() {
             _store.HireWorker(WorkerTypes.dev);
+            _workers.UpdateWorkers();
         }
         public void HireTester() {
             _store.HireWorker(WorkerTypes.test);
+            _workers.UpdateWorkers();
         }
         public void HireBa() {
             _store.HireWorker(WorkerTypes.ba);
+            _workers.UpdateWorkers();
         }
         public void UpgradeDev() {
-
+            UpgradeWorker(WorkerTypes.dev);
         }
         public void UpgradeTester() {
-
+            UpgradeWorker(WorkerTypes.test);
         }
         public void UpgradeBa() {
-
+            UpgradeWorker(WorkerTypes.ba);
         }
         private void UpgradeWorker(WorkerTypes type) {
             _store.GoToStore();
@@ -62,13 +70,13 @@ namespace kanban_bot {
                 WorkerTypes.ba => StoreItems.UpskillBA,
                 WorkerTypes.founder => StoreItems.UpskillDeveloper
             };
-            
+
             var item = _store.RetrieveStoreItem(storeItemType);
 
             _store.PurchaseStoreItem(item);
             _store.GoToKanban();
             _board.SelectPurchasedStoreItem(type);
-            _store.OrderBy(w => w.SkillLevel).FirstOrDefault()?.SelectWithWait(TimeSpan.FromSeconds(10));
+            _workers.GetLowestSkillWorker(type)?.SelectWithWait(TimeSpan.FromSeconds(10));
         }
         public void AddProject() {
             _board.AddProject();

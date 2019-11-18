@@ -34,26 +34,37 @@ namespace kanban_bot {
         public bool AnyIdleWorkers(WorkerTypes workerType) {
             return _driver.IsIdleWorkerAvailable(workerType);
         }
+        public int IdleWorkerCount(WorkerTypes workerType) {
+            return _driver.GetIdleWorkerCount(workerType);
+        }
         public Worker GetIdleWorker(WorkerTypes workerType) {
             var workerId = _driver.GetIdleWorkerId(workerType);
             return workerId != null ? new Worker(workerId, _driver) : null;
+        }
+        public Worker GetLowestSkillWorker(WorkerTypes type) {
+            var typeWorkers = Workers.Where(w => w.Type == type);
+            var lowestSkill = _driver.GetLowestSkillForWorkers(type);
+            return lowestSkill == null ? null :
+                    Workers.Where(w => w.Type == type && w.SkillLevel == lowestSkill).OrderBy(w => w.isFree).FirstOrDefault();
+        }
+
+        public int GetLowestSkillLevelForWorker(WorkerTypes type) {
+            return _driver.GetLowestSkillForWorkers(type) ?? 1;
         }
     }
 
     public class Worker {
         private Driver _driver = null;
         private List<Skill> _skillz;
-        private string _id;
+        public string Id;
         public int SkillLevel => _skillz.FirstOrDefault(s => s.Type == (Skill.SkillType)Type)?.Level ?? 0;
         public WorkerTypes Type => _skillz.Count > 1 ? WorkerTypes.founder : (WorkerTypes)_skillz.First().Type;
 
-        public bool isBusy() {
-            return _driver.GetElementAttributeTextById(_id, "class").Contains("busy");
-        }
+        public bool isFree => !_driver.GetElementAttributeTextById(Id, "class").Contains("busy");
 
         public Worker(string id, Driver driver) {
             _driver = driver;
-            _id = id;
+            Id = id;
 
             _skillz = new List<Skill>();
             var skills = _driver.GetSkillsForWorker(id);
@@ -66,11 +77,11 @@ namespace kanban_bot {
         }
 
         public void Select() {
-            _driver.ClickItemById(_id);
+            _driver.ClickItemById(Id);
         }
         public void SelectWithWait(TimeSpan timeout) {
             var endTime = DateTime.Now + timeout;
-            while (isBusy() && endTime > DateTime.Now) {
+            while (!isFree && endTime > DateTime.Now) {
                 Thread.Sleep(10);
             }
             Select();
