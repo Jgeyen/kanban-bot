@@ -25,12 +25,13 @@ namespace kanban_bot {
             TesterStrategy = testerStrategy;
             BaStrategy = baStrategy;
             State = new State(Pool, Board, Store);
-            Actions = new Actions(Pool, Board, Store);
+            Actions = new Actions(Pool, Board, Store, State);
         }
 
         public void AddProject() {
             ProjectStrategy.ExecuteStrategy(State, Actions);
         }
+        
         public void UpdateState() {
             var start = DateTime.Now;
             State.UpdateState();

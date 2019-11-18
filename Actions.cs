@@ -5,10 +5,12 @@ namespace kanban_bot {
         private WorkerPool _workers;
         private KanbanBoard _board;
         private Store _store;
-        public Actions(WorkerPool workers, KanbanBoard board, Store store) {
+        private State _state;
+        public Actions(WorkerPool workers, KanbanBoard board, Store store, State state) {
             _workers = workers;
             _board = board;
             _store = store;
+            _state = state;
         }
 
         public bool FounderDoDevWork() {
@@ -41,24 +43,34 @@ namespace kanban_bot {
             return foundWork;
         }
         public void HireDev() {
-            _store.HireWorker(WorkerTypes.dev);
-            _workers.UpdateWorkers();
+            if (!_state.CanHireDev) return;
+            HireWorker(WorkerTypes.dev);
         }
         public void HireTester() {
-            _store.HireWorker(WorkerTypes.test);
-            _workers.UpdateWorkers();
+            if (!_state.CanHireTest) return;
+            HireWorker(WorkerTypes.test);
         }
         public void HireBa() {
-            _store.HireWorker(WorkerTypes.ba);
-            _workers.UpdateWorkers();
+            if (!_state.CanHireBa) return;
+            HireWorker(WorkerTypes.ba);
+        }
+        private void HireWorker(WorkerTypes type) {
+            _store.HireWorker(type);
+            _state.UpdateWorkerInformation();
         }
         public void UpgradeDev() {
+            if (!_state.CanUpgradeDev) return;
+
             UpgradeWorker(WorkerTypes.dev);
         }
         public void UpgradeTester() {
+            if (!_state.CanUpgradeTest) return;
+
             UpgradeWorker(WorkerTypes.test);
         }
         public void UpgradeBa() {
+            if (!_state.CanUpgradeBa) return;
+
             UpgradeWorker(WorkerTypes.ba);
         }
         private void UpgradeWorker(WorkerTypes type) {
@@ -71,12 +83,12 @@ namespace kanban_bot {
                 WorkerTypes.founder => StoreItems.UpskillDeveloper
             };
 
-            var item = _store.RetrieveStoreItem(storeItemType);
-
-            _store.PurchaseStoreItem(item);
+            _store.PurchaseStoreItem(storeItemType);
             _store.GoToKanban();
             _board.SelectPurchasedStoreItem(type);
             _workers.GetLowestSkillWorker(type)?.SelectWithWait(TimeSpan.FromSeconds(10));
+            _state.UpdateWorkerInformation();
+
         }
         public void AddProject() {
             _board.AddProject();

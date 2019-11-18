@@ -39,7 +39,6 @@ namespace kanban_bot {
                         actions.HireBa();
                         break;
                 }
-                state.UpdateState();
             }
         }
 
@@ -49,18 +48,18 @@ namespace kanban_bot {
             switch (_type) {
                 case WorkerTypes.dev:
                     workerCount = state.DevCount;
-                    lowSkill = state.MinDevLevel;
-                    upgradeCost = state.HireDevCost;
+                    lowSkill = state.DevMinLevel;
+                    upgradeCost = state.DevHireCost;
                     break;
                 case WorkerTypes.test:
                     workerCount = state.TesterCount;
-                    lowSkill = state.MinTestLevel;
-                    upgradeCost = state.HireTestCost;
+                    lowSkill = state.TestMinLevel;
+                    upgradeCost = state.TestHireCost;
                     break;
                 case WorkerTypes.ba:
                     workerCount = state.BaCount;
-                    lowSkill = state.MinBaLevel;
-                    upgradeCost = state.HireBaCost;
+                    lowSkill = state.BaMinLevel;
+                    upgradeCost = state.BaHireCost;
                     break;
             }
 
@@ -102,21 +101,21 @@ namespace kanban_bot {
             switch (_type) {
                 case WorkerTypes.dev:
                     if (state.DevCount >= 1 &&
-                        state.MinDevLevel < state.DevCount * 2 &&
+                        state.DevMinLevel < state.DevCount * 2 &&
                         state.Bank > state.DevUpgradeCost) {
                         actions.UpgradeDev();
                     }
                     break;
                 case WorkerTypes.test:
                     if (state.TesterCount >= 1 &&
-                        state.MinTestLevel < state.TesterCount * 2 &&
+                        state.TestMinLevel < state.TesterCount * 2 &&
                         state.Bank > state.TestUpgradeCost) {
                         actions.UpgradeTester();
                     }
                     break;
                 case WorkerTypes.ba:
                     if (state.BaCount >= 1 &&
-                        state.MinBaLevel < state.BaCount * 2 &&
+                        state.BaMinLevel < state.BaCount * 2 &&
                         state.Bank > state.BaUpgradeCost) {
                         actions.UpgradeBa();
                     }

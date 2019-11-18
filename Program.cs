@@ -33,12 +33,10 @@ namespace kanban_bot {
                     game.TesterWork();
                     Debug.WriteLine($"About to BA: {DateTime.Now}");
                     game.BaWork();
-                    if (loopCount % 25 == 0) {
-                        game.HireDeveloper();
-                        game.HireTester();
-                        game.HireBa();
-                    }
-                    if (loopCount % 50 == 0) {
+                    game.HireDeveloper();
+                    game.HireTester();
+                    game.HireBa();
+                    if (loopCount % 5 == 0) {
                         game.UpgradeDeveloper();
                         game.UpgradeTester();
                         game.UpgradeBa();

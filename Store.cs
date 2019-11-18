@@ -1,4 +1,6 @@
+using System.Linq;
 using System.Text.RegularExpressions;
+using OpenQA.Selenium;
 
 namespace kanban_bot {
     public enum StoreItems {
@@ -6,8 +8,8 @@ namespace kanban_bot {
         UpskillDeveloper = 20,
         UpskillBA = 107,
         MechanicalKeyboard = 12
-
     }
+
     public class Store {
         private static Driver _driver;
 
@@ -19,38 +21,44 @@ namespace kanban_bot {
             return new StoreItem(_driver, item);
         }
 
-        public void PurchaseStoreItem(StoreItem item) {
-            //Click on item to buy
-            item.Purchase();
+        public void PurchaseStoreItem(StoreItems item) {
+            new StoreItem(_driver, item).Purchase();
         }
 
+        public bool StoreAvailable => _driver.CDriver.FindElementsByCssSelector(".button.visitStore.hint").Any();
         public void GoToStore() {
-            _driver.GoToStore();
+            _driver.ClickItem(By.CssSelector(".button.visitStore"));
         }
         public void GoToKanban() {
-            _driver.GoToKanban();
+            _driver.ClickItem(By.Id("closeStore"));
         }
-        public int TotalMoneyAvailable => ExtractMoney(_driver.GetElementTextById("money")) ?? int.MinValue;
-        public int NewProjectCost => ExtractMoney(_driver.GetNewProjectCost()) ?? int.MinValue;
+        public int TotalMoneyAvailable => ExtractMoney(_driver.GetElementText(By.Id("money"))) ?? int.MinValue;
+        public int NewProjectCost => ExtractMoney(_driver.GetElementText(By.Id("getLead"))) ?? int.MinValue;
 
-        public int WorkerPurchaseCost(WorkerTypes type) {
-            return ExtractMoney(_driver.GetHireWorkerCost(type)) ?? int.MaxValue;
+        public int WorkerHireCost(WorkerTypes type) {
+            return ExtractMoney(_driver.GetElementText(By.CssSelector($"div.getPerson.{type}:not(.hidden)"))) ?? int.MaxValue;
         }
 
         public void HireWorker(WorkerTypes type) {
-            _driver.ClickHireWorker(type);
+            _driver.ClickItem(By.CssSelector(($"div.getPerson.{type}:not(.hidden)")));
         }
-
-        public bool IsHireWorkerButtonAvailable(WorkerTypes type) {
-            return _driver.IsHireWorkerButtonAvailable(type);
-        }
-        public int WorkerUpdateCost(WorkerTypes type){
-            var item = type switch{
+        public bool IsStoreItemAvailable(WorkerTypes type) {
+            var item = type switch
+            {
                 WorkerTypes.dev => StoreItems.UpskillDeveloper,
                 WorkerTypes.test => StoreItems.UpskillTester,
                 WorkerTypes.ba => StoreItems.UpskillBA
             };
-            return ExtractMoney(_driver.GetElementAttributeTextByCss($"#store-button-{(int)item}", "innerText"))?? int.MaxValue;
+            return _driver.CDriver.FindElementsByCssSelector($".storeItem-catalog.item-enabled #store-button-{(int)item}").Any();
+        }
+        public int WorkerUpdateCost(WorkerTypes type) {
+            var item = type switch
+            {
+                WorkerTypes.dev => StoreItems.UpskillDeveloper,
+                WorkerTypes.test => StoreItems.UpskillTester,
+                WorkerTypes.ba => StoreItems.UpskillBA
+            };
+            return ExtractMoney(_driver.GetElementAttributeText(By.CssSelector($"#store-button-{(int)item}"), "innerText")) ?? int.MaxValue;
         }
         public static int? ExtractMoney(string text) {
             var moneyText = Regex.Match(text, @"-?\d+").Value;
@@ -64,9 +72,9 @@ namespace kanban_bot {
             _driver = driver;
             _id = $"store-button-{(int)item}";
         }
-        public int Cost => Store.ExtractMoney(_driver.StoreItemCost(_id)) ?? int.MaxValue;
+        public int Cost => Store.ExtractMoney(_driver.GetElementText(By.CssSelector($"#items>.storeItem-catalog.item-enabled>#{_id}"))) ?? int.MaxValue;
         public void Purchase() {
-            _driver.PurchaseStoreItem(_id);
+            _driver.ClickItem(By.Id(_id));
         }
     }
 }
