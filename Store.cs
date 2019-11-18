@@ -17,10 +17,6 @@ namespace kanban_bot {
             _driver = driver;
         }
 
-        public StoreItem RetrieveStoreItem(StoreItems item) {
-            return new StoreItem(_driver, item);
-        }
-
         public void PurchaseStoreItem(StoreItems item) {
             new StoreItem(_driver, item).Purchase();
         }
